@@ -1,7 +1,6 @@
 const lobby = [];
 const MAX_PLAYER = 1;
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { addWin, recordGameHistory } = require('./lib/db');
 
 module.exports = (io) => {
     const gameNamespace = io.of('/tank-game');
@@ -85,25 +84,21 @@ module.exports = (io) => {
 						}
 					});
 				});
-		    		playerSocket.on('gameFinished', async (data) =>
-				{
-					try{
-						await prisma.gameHistory.create({
-							data: {
-								playerId: 1,
-								opponentId: null,
-								opponentScore: 0,
-								winnerId: data.isWin ? 1 : null,
-								playerScore: data.playerScore,
-								duration: 42
-							}
-							})
+		    		playerSocket.on('gameFinished', async (data) => {
+					try
+					{
+						await recordGameHistory({
+							playerId: 1,
+							isWin: data.isWin,
+							score: data.playerScore,
+							duration: 42
+						});
 					}
-					catch (error){
-						console.error("something went wrong in the db ", error);
+					catch (error)
+					{
+						console.error("playerSocket.on gameFinished error: ", error);
 					}
-				}
-				);
+				});
 			});
 		}
         else {
