@@ -1,0 +1,175 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int    @id @default(autoincrement())
+  username    String @unique
+  email       String @unique
+  password    String
+  avatar      String?
+  isOnline    Boolean @default(false)
+  lastSeen    DateTime?
+  tankColor   String @default("#00ff00")
+  tankName    String @default("")
+  tankLevel   Int    @default(1)
+  xp          Int    @default(0)
+  wins        Int    @default(0)
+  gamesPlayed Int    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  gamesAsPlayer GameHistory[] @relation("PlayerGames")
+  gamesAsOppenent GameHistory[] @relation("OppentGames")
+  gamesWon GameHistory[] @relation("WonGames")
+  sentFriendRequests  Friendship[] @relation("UserSentRequests")
+  receivedFriendRequests Friendship[] @relation("UserReceivedRequests")
+  friends User[] @relation("UserFriends")
+  conversations ConversationParticipant[]
+  messages Message[]
+  friendOf User[] @relation("UserFriends")
+  messageReads MessageRead[]
+  apiKeys ApiKey[]
+  notifications Notification[]
+}
+
+model Friendship {
+  id        Int      @id @default(autoincrement())
+  status    FriendshipStatus @default(PENDING)
+  senderId  Int
+  sender    User     @relation("UserSentRequests", fields: [senderId], references: [id])
+  receiverId Int
+  receiver  User     @relation("UserReceivedRequests", fields: [receiverId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+}
+
+model Conversation {
+  id        Int      @id @default(autoincrement())
+  type      ConversationType @default(PRIVATE)
+  
+  user1Id   Int?
+  user2Id   Int?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  participants ConversationParticipant[]
+  messages     Message[]
+  @@unique([user1Id, user2Id])
+}
+
+model ConversationParticipant {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  conversationId Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  lastReadAt     DateTime? @default(now())
+  joinedAt       DateTime @default(now())
+  
+  @@unique([userId, conversationId])
+}
+
+model Message {
+  id             Int      @id @default(autoincrement())
+  content        String   @db.Text
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  conversationId Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  
+  readBy         MessageRead[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model MessageRead {
+  id        Int      @id @default(autoincrement())
+  messageId Int
+  message   Message  @relation(fields: [messageId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  readAt    DateTime @default(now())
+
+  @@unique([messageId, userId])
+}
+
+enum FriendshipStatus {
+  PENDING   
+  ACCEPTED  
+  DECLINED  
+  BLOCKED   
+}
+
+enum ConversationType {
+  PRIVATE   
+  GROUP 
+}
+
+model GameHistory {
+  id          Int      @id @default(autoincrement())
+  playerId    Int
+  player	User	@relation("PlayerGames", fields: [playerId], references: [id])
+  opponentId  Int?
+  opponent	User?	@relation("OppentGames", fields: [opponentId], references: [id])
+  winnerId    Int?
+  winner	User?	@relation("WonGames", fields: [winnerId], references: [id])
+  playerScore Int      @default(0)
+  opponentScore Int?
+  duration    Int
+  createdAt   DateTime @default(now())
+}
+
+model ApiKey {
+  id          Int       @id @default(autoincrement())
+  name        String
+  key         String    @unique
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Notification {
+  id        Int             @id @default(autoincrement())
+  userId    Int
+  user      User            @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean         @default(false)
+  data      Json?
+  createdAt DateTime        @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
+}
+
+enum NotificationType {
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  FRIEND_REMOVED
+  MESSAGE_RECEIVED
+  GAME_INVITE
+  GAME_STARTED
+  SYSTEM
+}
