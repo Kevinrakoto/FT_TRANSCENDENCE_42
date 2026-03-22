@@ -1,6 +1,0 @@
-{
-  "/api/friends/pending/route": "app/api/friends/pending/route.js",
-  "/(public)/signin/page": "app/(public)/signin/page.js",
-  "/(app)/dashboard/me/page": "app/(app)/dashboard/me/page.js",
-  "/(app)/friends/requests/page": "app/(app)/friends/requests/page.js"
-}
