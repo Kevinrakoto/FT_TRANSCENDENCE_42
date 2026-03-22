@@ -10,11 +10,11 @@ export const authOptions: NextAuthOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Mot de passe", type: "password" }
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email et mot de passe requis")
+           throw new Error("Email and password required")
         }
 
         const user = await prisma.user.findUnique({
@@ -22,13 +22,13 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user || !user.password) {
-          throw new Error("Utilisateur non trouvé")
+           throw new Error("User not found")
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.password)
 
         if (!isValid) {
-          throw new Error("Mot de passe incorrect")
+           throw new Error("Incorrect password")
         }
 
       await prisma.user.update({
@@ -72,17 +72,21 @@ export const authOptions: NextAuthOptions = {
       return session
     }
   },
-  events: {
-    async signOut({ token }) {
-      if (token?.id) {
-        const { prisma } = await import('@/lib/prisma')
-        await prisma.user.update({
-          where: { id: token.id },
-          data: { isOnline: false, lastSeen: new Date() }
-        })
-      }
-    }
-  },
+   events: {
+     async signOut({ token }) {
+       if (token?.id) {
+         try {
+           const { prisma } = await import('@/lib/prisma')
+           await prisma.user.update({
+             where: { id: token.id },
+             data: { isOnline: false, lastSeen: new Date() }
+           })
+         } catch (error) {
+           console.error('Error in signOut event:', error)
+         }
+       }
+     }
+   },
   session: {
     strategy: "jwt"
   },

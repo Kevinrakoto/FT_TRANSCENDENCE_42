@@ -1,6 +1,5 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from "next"
-import { ClientProviders } from "@/components/ClientProviders"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -42,9 +41,7 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body>
-        <ClientProviders>
-          {children}
-        </ClientProviders>
+        {children}
         <script
           dangerouslySetInnerHTML={{
             __html: `

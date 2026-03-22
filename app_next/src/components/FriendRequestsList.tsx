@@ -39,7 +39,7 @@ export default function FriendRequestsList() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Friendship request ({requests.length})</h2>
+       <h2 className="text-xl font-bold">Friend Requests ({requests.length})</h2>
       {requests.map(request => (
         <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
           <div>

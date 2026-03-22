@@ -294,7 +294,7 @@ app.prepare().then(() => {
   if (error) {
     console.error('Erreur démarrage serveur:', error);
   } else {
-    console.log('> Serveur prêt sur https://localhost:3000');
+    console.log('> Server ready on https://localhost:3000');
   }
   });
 
