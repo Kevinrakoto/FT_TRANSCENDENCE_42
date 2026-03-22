@@ -3,7 +3,7 @@
 
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://localhost:3000';
+const SOCKET_URL = process.env.NEXTAUTH_URL || 'https://localhost:3000';
 
 let socketInstance: Socket | null = null;
 let currentSocketUserId: string | null = null;

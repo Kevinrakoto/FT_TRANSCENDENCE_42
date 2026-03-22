@@ -5,10 +5,9 @@ import { io } from 'socket.io-client';
 
 let socket;
 let myPlayerNumber = null;
-let numberOfPlayer = 2;
+let numberOfPlayer = 1;
 let remotePlayers = {};
 let isGameRunning = false;
-let gameFinished = false;
 
 const scene = new THREE.Scene();
 
@@ -137,18 +136,34 @@ loader.load('/tank-game/gltf/colored_block_red.gltf', (g) => { models.red = g.sc
 loader.load('/tank-game/gltf/colored_block_yellow.gltf', (g) => { models.yellow = g.scene; });
 
 manager.onLoad = () => {
-    const box = new THREE.Box3().setFromObject(models.dirt);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    blockSize = size.x;
+    // ...existing code...
+    const base = window.location.origin;
+    console.log('[SOCKET] Creating socket to:', base + '/tank-game');
 
-    const base = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
     socket = io(base + '/tank-game', {
       transports: ['websocket', 'polling']
     });
-    
+
+    // Événements critiques
+    socket.on('connect', () => {
+      console.log('[SOCKET] ✅ CONNECTED with id:', socket.id);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('[SOCKET] ❌ CONNECT_ERROR:', err);
+    });
+
+    socket.on('error', (err) => {
+      console.error('[SOCKET] ❌ ERROR:', err);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('[SOCKET] ⚠️ DISCONNECTED');
+    });
+
     setupSocketListener();
 };
+
 
 const groundtexture = textureloader.load('/tank-game/textures/ground.jpg');
 groundtexture.colorSpace = THREE.SRGBColorSpace;
@@ -406,29 +421,6 @@ function hitPlayer( playerNumber ) {
 					if (playerhit.userData.health <= 0) {
 						playerhit.userData.dead = true;
 						playerhit.position.x = 200;
-					}
-					if (gameFinished)
-						return ;
-					if (player.userData.dead)
-					{
-						gameFinished = true;
-						socket.emit('gameFinished', { isWin: false});
-					}
-					else
-					{
-						let enemiesCount = 0;
-						for (let key in remotePlayers)
-						{
-							if (!remotePlayers[key].userData.dead)
-							{
-								enemiesCount++;
-							}
-						}
-						if (enemiesCount === 0)
-						{
-							gameFinished = true;
-							socket.emit('gameFinished', { isWin: true});
-						}
 					}
 				}, 50);
 			}

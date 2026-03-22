@@ -1,12 +1,11 @@
 const lobby = [];
-const MAX_PLAYER = 1;
-const { addWin, recordGameHistory } = require('./lib/db');
+const MAX_PLAYER = 2;
 
 module.exports = (io) => {
     const gameNamespace = io.of('/tank-game');
 
     gameNamespace.on('connection', (socket) => {
-        console.log('Player joined lobby:', socket.id);
+        console.log('Player joined lobbyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy:', socket.id);
         lobby.push(socket);
 
         socket.on('disconnect', () => {
@@ -83,21 +82,6 @@ module.exports = (io) => {
 							});
 						}
 					});
-				});
-		    		playerSocket.on('gameFinished', async (data) => {
-					try
-					{
-						await recordGameHistory({
-							playerId: 1,
-							isWin: data.isWin,
-							score: data.playerScore,
-							duration: 42
-						});
-					}
-					catch (error)
-					{
-						console.error("playerSocket.on gameFinished error: ", error);
-					}
 				});
 			});
 		}
