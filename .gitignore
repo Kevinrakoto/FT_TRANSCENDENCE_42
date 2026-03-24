@@ -40,3 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /app_next/public/uploads/*
+app_next/node_modules/
