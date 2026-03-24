@@ -330,14 +330,18 @@ export function launchGame(container) {
 			console.log(`Waiting for players: ${data.current}/${data.required}`);
 		});
 
-		socket.on('playerMoved', (data) => {
-			const enemy = remotePlayers[data.playerNumber];
-			if (enemy) {
-				enemy.position.x = data.x;
-				enemy.position.z = data.z;
-				enemy.rotation.y = data.rotation;
+	socket.on('playerMoved', (data) => {
+		const enemy = remotePlayers[data.playerNumber];
+		if (enemy) {
+			if (enemy.userData.dead) {
+				enemy.userData.dead = false;
+				enemy.userData.health = 3;
 			}
-		});
+			enemy.position.x = data.x;
+			enemy.position.z = data.z;
+			enemy.rotation.y = data.rotation;
+		}
+	});
 
 		socket.on('blockHit', (data) => {
 			hitBlock(data.x, data.y);
@@ -424,11 +428,50 @@ export function launchGame(container) {
 						if (playerhit.userData.health <= 0) {
 							playerhit.userData.dead = true;
 							playerhit.position.x = 200;
+							if (playerNumber == myPlayerNumber) respawn();
 						}
 					}, 50);
 				}
 			});
 		}
+	}
+
+	function respawn() {
+		let spawnX = -1, spawnZ = -1;
+		let dist = -1;
+
+		for ( let y = 0; y < map.length; ++y ) {
+			for ( let x = 0; x < map[y].length; ++x ) {
+				if (map[y][x] < 0) {
+					const realX = (x * blockSize) + (blockSize / 2) - ((map[y].length * blockSize) / 2);
+					const realZ = (y * blockSize) + (blockSize / 2) - ((map.length * blockSize) / 2);
+					
+					let tempdist = Infinity;
+					for ( let playerNumber in remotePlayers ) {
+						const enemy = remotePlayers[playerNumber];
+						const temp = Math.sqrt((enemy.position.x - realX) ** 2 + (enemy.position.z - realZ) ** 2);
+
+						if (temp < tempdist) {
+							tempdist = temp;
+						}
+					}
+
+					if (tempdist > dist) {
+						dist = tempdist;
+						spawnX = realX;
+						spawnZ = realZ;
+					}
+				}
+			}
+		}
+		player.userData.dead = false;
+		player.userData.health = 3;
+		player.position.set(spawnX, -0.4, spawnZ);
+		socket.emit('move', {
+			x: player.position.x,
+			z: player.position.z,
+			rotation: player.rotation.y
+		});
 	}
 
 	function createBlock( type, x, y ) {
