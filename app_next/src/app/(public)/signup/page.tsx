@@ -42,8 +42,6 @@ export default function SignupPage() {
           username: formData.username,
           email: formData.email,
           password: formData.password,
-          tankColor: formData.tankColor,
-          tankName: formData.tankName || `Tank_${formData.username}`,
         }),
       });
 
@@ -63,21 +61,23 @@ export default function SignupPage() {
     }
   };
 
-  return (
-    <div className="game-container">
-      {/* Bouton retour vers l'accueil */}
+    return (
+    <div className="landing-container">
+      <div className='landing-background'></div>
       <Link href="/" className="back-button">
         ← BACK
       </Link>
-
-      <div className="auth-container">
-        <div className="auth-box signup-box">
-           <h1 className="title-main">SIGN UP</h1>
-          
+      <div className="vector-card">
+        <div className="card-illustration">
+          <div className='card-title-wrapper'>
+            <h1 className="vector-title">INSCRIPTION</h1>
+          </div>
+        </div>
+        <div className='card-body'>
           <form onSubmit={handleSubmit} className="auth-form">
 
             <div className="form-group">
-               <label htmlFor="username" className="form-label">Username</label>
+              <label htmlFor="username" className="form-label"> Pseudo</label>
               <input
                 type="text"
                 id="username"
@@ -137,13 +137,13 @@ export default function SignupPage() {
               </div>
             )}
 
-             <button 
-               type="submit" 
-               className="submit-button"
-               disabled={loading}
-             >
-               {loading ? 'LOADING...' : ' CREATE ACCOUNT'}
-             </button>
+            <button 
+              type="submit" 
+              className="submit-button"
+              disabled={loading}
+            >
+              {loading ? 'CHARGEMENT...' : 'CREATE'}
+            </button>
           </form>
 
           <div className="auth-footer">
@@ -153,7 +153,7 @@ export default function SignupPage() {
             </Link>
           </div>
         </div>
-      </div>
+        </div>
     </div>
   );
 }

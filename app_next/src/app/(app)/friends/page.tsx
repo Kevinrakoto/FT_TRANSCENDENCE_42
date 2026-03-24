@@ -148,6 +148,7 @@ export default function FriendsPage() {
               onRequestSent={() => {
                 setSearchUsername('')
               }}
+              onUserSelect={(user) => setSearchUsername(user.username)}
             />
           </div>
         </div>

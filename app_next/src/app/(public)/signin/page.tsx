@@ -41,61 +41,66 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="game-container">
+    <div className="landing-container">
+      <div className="landing-background"></div>
       <Link href="/" className="back-button">
         ← BACK
       </Link>
-      <div className="auth-container">
-        <div className="auth-box">
-           <h1 className="auth-title"> LOGIN</h1>
-
-            {registered && (
-              <div className="success-message">
-                 Account created successfully! Please log in.
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit}>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label className="form-label">Email</label>
-                  <input
-                    type="email"
-                    className="form-input"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tanker@retro.com"
-                    required
-                  />
+      <div className="vector-card">
+        <div className="card-illustration">
+          <div className='card-title-wrapper'>
+           <h1 className="vector-title"> CONNEXION</h1>
+  
+              {registered && (
+                <div className="success-message">
+                   Account created successfully! Please log in.
                 </div>
-
-                <div className="form-group">
-                  <label className="form-label">Password</label>
-                  <input
-                    type="password"
-                    className="form-input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                  />
+             )}
+             </div>
+             </div>
+             <div className='card-body'>
+              <form onSubmit={handleSubmit}>
+                {/* <div className="form-grid"> */}
+                  <div className="form-group">
+                    <label className="form-label">Email</label>
+                    <input
+                      type="email"
+                      className="form-input"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="tanker@retro.com"
+                      required
+                    />
+                  </div>
+  
+                  <div className="form-group">
+                    <label className="form-label">Password</label>
+                    <input
+                      type="password"
+                      className="form-input"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                {/* </div> */}
+  
+                {error && <div className="error-message">⚠️ {error}</div>}
+  
+                <div className="form-actions">
+                  <button type="submit" className="submit-button-si" disabled={loading}>
+                    {loading ? 'CONNEXION...' : 'LOG IN'}
+                  </button>
+  
+                  <Link href="/signup" className="menu-item">
+                     NOT YET REGISTERED?
+                  </Link>
                 </div>
+              </form>
               </div>
 
-              {error && <div className="error-message">⚠️ {error}</div>}
-
-              <div className="form-actions">
-                <button type="submit" className="submit-button" disabled={loading}>
-                   {loading ? 'SIGNING IN...' : ' SIGN IN'}
-                </button>
-
-                <Link href="/signup" className="menu-text">
-                   NOT YET REGISTERED?
-                </Link>
-              </div>
-            </form>
-          </div>
       </div>
     </div>
-  )
-}
+    )
+  }

@@ -297,6 +297,7 @@ export function launchGame(container) {
 			}
 		}
 
+		updateHealthBar(player);
 		for (let key in remotePlayers) {
 			remotePlayers[key].userData.bullets.forEach(bullet => {
 				if (bullet.userData.dir === 'w') bullet.position.z -= bSpeed;
@@ -304,9 +305,18 @@ export function launchGame(container) {
 				if (bullet.userData.dir === 'a') bullet.position.x -= bSpeed;
 				if (bullet.userData.dir === 'd') bullet.position.x += bSpeed;
 			});
+			updateHealthBar(remotePlayers[key]);
 		}
 
 		renderer.render( scene, camera );
+	}
+
+	function updateHealthBar(player) {
+		const healthBar = player.getObjectByName('healthBar');
+
+		healthBar.lookAt(camera.position);
+		healthBar.rotation.y = 0;
+		healthBar.rotation.z = 0;
 	}
 
 	function setupSocketListener() {
@@ -333,13 +343,20 @@ export function launchGame(container) {
 	socket.on('playerMoved', (data) => {
 		const enemy = remotePlayers[data.playerNumber];
 		if (enemy) {
-			if (enemy.userData.dead) {
-				enemy.userData.dead = false;
-				enemy.userData.health = 3;
-			}
 			enemy.position.x = data.x;
 			enemy.position.z = data.z;
 			enemy.rotation.y = data.rotation;
+			if (enemy.userData.dead) {
+				enemy.userData.dead = false;
+				enemy.userData.health = enemy.userData.maxHealth;
+				const healthBar = enemy.getObjectByName('healthBar');
+				if (healthBar) {
+					healthBar.children.forEach(bar => {
+						bar.material.color.set(0xa4133c);
+						bar.material.needsUpdate = true;
+					});
+				}
+			}
 		}
 	});
 
@@ -411,8 +428,18 @@ export function launchGame(container) {
 
 		if (playerhit) {
 			playerhit.userData.health -= 1;
+			const healthBar = playerhit.getObjectByName('healthBar');
+			if (healthBar) {
+				if (playerhit.userData.health >= 0 && playerhit.userData.health < playerhit.userData.maxHealth) {
+					const bar = healthBar.children[playerhit.userData.health];
+					if (bar) {
+						bar.material.color.set(0x1a1a1a);
+						bar.material.needsUpdate = true;
+					}
+				}
+			}
 			playerhit.traverse((child) =>{
-				if (child.isMesh) {
+				if (child.isMesh && child.name !== 'healthBarSegment') {
 					child.material = child.material.clone();
 					const originalMap = child.material.map;
 					const originalColor = child.material.color.clone();
@@ -465,13 +492,40 @@ export function launchGame(container) {
 			}
 		}
 		player.userData.dead = false;
-		player.userData.health = 3;
+		player.userData.health = player.userData.maxHealth;
 		player.position.set(spawnX, -0.4, spawnZ);
+		const healthBar = player.getObjectByName('healthBar');
+		if (healthBar) {
+			healthBar.children.forEach(bar => {
+				bar.material.color.set(0xa4133c);
+				bar.material.needsUpdate = true;
+			});
+		}
 		socket.emit('move', {
 			x: player.position.x,
 			z: player.position.z,
 			rotation: player.rotation.y
 		});
+	}
+
+	function createHealthBar( maxHealth ) {
+		const group = new THREE.Group();
+		const width = 1;
+		group.name = 'healthBar';
+
+		for (let i = 0; i < maxHealth; ++i) {
+			const geometry = new THREE.BoxGeometry(width / maxHealth, 0.1, 0.05);
+			const material = new THREE.MeshBasicMaterial({ color: 0xa4133c });
+			const bar = new THREE.Mesh(geometry, material);
+
+			bar.name = 'healthBarSegment';
+
+			bar.position.x = (-width / 2) + (i * (width / maxHealth)) + ((width / maxHealth) / 2);
+
+			group.add(bar);
+		}
+
+		return ( group );
 	}
 
 	function createBlock( type, x, y ) {
@@ -500,11 +554,16 @@ export function launchGame(container) {
 				}
 			});
 
+			const healthBar = createHealthBar(3);
+			healthBar.position.y = 1.5;
+			tank.add(healthBar);
+
 			if (spawnSlot === myPlayerNumber) {
 				player = tank;
 				player.userData.dead = false;
 				player.userData.speed = 5;
 				player.userData.health = 3;
+				player.userData.maxHealth = 3;
 				scene.add(player);
 			}
 			else {
@@ -512,6 +571,7 @@ export function launchGame(container) {
 				remotePlayers[spawnSlot].userData.dead = false;
 				remotePlayers[spawnSlot].userData.bullets = [];
 				remotePlayers[spawnSlot].userData.health = 3;
+				remotePlayers[spawnSlot].userData.maxHealth = 3;
 				scene.add(tank);
 			}
 		}

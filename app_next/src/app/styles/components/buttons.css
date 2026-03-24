@@ -3,7 +3,7 @@
 .logout-button {
   position: absolute;
   top: 40px;
-  right: 130px;
+  right: 200px;
   width: 60px;
   height: 60px;
   background: var(--menu-text);
@@ -35,6 +35,71 @@
 }
 
 .logout-button:hover .logout-icon {
+  transform: scale(1.2);
+}
+
+.logout-button-left {
+  position: absolute;
+  top: 40px;
+  left: 50px;
+  width: 60px;
+  height: 60px;
+  background: var(--menu-text);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--red);
+  border-radius: 10%;
+  color: var(--red);
+  cursor: pointer;
+  transition: all 0.4s ease;
+  z-index: 100;
+  box-shadow: 0 0 20px rgba(255, 0, 110, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.logout-button-left:hover {
+  background: var(--red);
+  color: white;
+  box-shadow: 0 0 40px var(--red);
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.logout-button-left:hover .logout-icon {
+  transform: scale(1.2);
+}
+
+.friends-button-left {
+  position: absolute;
+  top: 40px;
+  left: 130px;
+  width: 60px;
+  height: 60px;
+  background: var(--menu-text);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--neon-purple);
+  border-radius: 10%;
+  color: var(--neon-purple);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.4s ease;
+  z-index: 100;
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.friends-button-left:hover {
+  background: var(--neon-blue);
+  color: var(--dark-bg);
+  box-shadow: 0 0 40px var(--neon-blue);
+  transform: scale(1.1) rotate(5deg);
+}
+
+.friends-button-left:hover .friends-icon {
   transform: scale(1.2);
 }
 
@@ -95,7 +160,7 @@
 .friends-button {
   position: absolute;
   top: 40px;
-  right: 50px;
+  right: 120px;
   width: 60px;
   height: 60px;
   background: var(--menu-text);
