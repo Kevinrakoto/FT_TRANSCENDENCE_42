@@ -90,7 +90,7 @@ export default function LoginPage() {
   
                 <div className="form-actions">
                   <button type="submit" className="submit-button-si" disabled={loading}>
-                    {loading ? 'CONNEXION...' : ' SE CONNECTER'}
+                    {loading ? 'CONNEXION...' : 'LOG IN'}
                   </button>
   
                   <Link href="/signup" className="menu-item">

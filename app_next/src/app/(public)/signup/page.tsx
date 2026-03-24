@@ -42,8 +42,6 @@ export default function SignupPage() {
           username: formData.username,
           email: formData.email,
           password: formData.password,
-          tankColor: formData.tankColor,
-          tankName: formData.tankName || `Tank_${formData.username}`,
         }),
       });
 
@@ -144,7 +142,7 @@ export default function SignupPage() {
               className="submit-button"
               disabled={loading}
             >
-              {loading ? 'CHARGEMENT...' : ' CRÉER LE COMPTE'}
+              {loading ? 'CHARGEMENT...' : 'CREATE'}
             </button>
           </form>
 
