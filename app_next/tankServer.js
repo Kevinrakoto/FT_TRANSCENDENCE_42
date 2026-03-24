@@ -84,6 +84,22 @@ module.exports = (io) => {
 					});
 				});
 			});
+
+			let timer = 180;
+
+			const matchTimer = setInterval(() => {
+				--timer;
+				matchPlayers.forEach((playerSocket) => {
+					playerSocket.emit('timerUpdate', { seconds: timer });
+				});
+
+				if (timer <= 0) {
+					clearInterval(matchTimer);
+					matchPlayers.forEach((playerSocket) => {
+						playerSocket.emit('gameOver', { reason: 'Time Up!' });
+					});
+				}
+			}, 1000);
 		}
         else {
             socket.emit('waiting', {current: lobby.length, required: MAX_PLAYER});

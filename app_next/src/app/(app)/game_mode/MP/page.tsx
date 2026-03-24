@@ -9,6 +9,13 @@ export default function MultiplayerGamePage() {
 	const {data : session, status} = useSession();
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
+	const [timeLeft, setTimeLeft] = useState(180);
+
+	const formatTime = (seconds: number) => {
+		const minutes = Math.floor(seconds / 60);
+		const secs = seconds % 60;
+		return `${minutes}:${secs.toString().padStart(2, '0')}`;
+	};
 
 	const gameContainerRef = useRef(null);
 
@@ -34,8 +41,13 @@ export default function MultiplayerGamePage() {
 
 		const cleanup = launchGame(gameContainerRef.current);
 
+		(window as any).updateTimer = (seconds: number) => {
+			setTimeLeft(seconds);
+		};
+
 		return () => {
 			cleanup();
+			delete (window as any).updateTimer;
 		};
 	}, [session, status, router]);
 
@@ -47,6 +59,12 @@ export default function MultiplayerGamePage() {
 		>
 			← Return
 		</button>
+		<div className="absolute bottom-10 translate-x-1/2
+						bg-black/50 text-white font-mono text-4xl
+						font-bold px-10 py-6 rounded-lg z-50
+						border-gray-500 shadow-lg">
+			{formatTime(timeLeft)}
+		</div>
 		<div
 			ref={gameContainerRef}
 			id="tank-game-root"

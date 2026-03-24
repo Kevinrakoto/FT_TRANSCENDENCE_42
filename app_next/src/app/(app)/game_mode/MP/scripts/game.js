@@ -314,9 +314,7 @@ export function launchGame(container) {
 	function updateHealthBar(player) {
 		const healthBar = player.getObjectByName('healthBar');
 
-		healthBar.lookAt(camera.position);
-		healthBar.rotation.y = 0;
-		healthBar.rotation.z = 0;
+		healthBar.lookAt(0, 100000, 10000);
 	}
 
 	function setupSocketListener() {
@@ -334,6 +332,12 @@ export function launchGame(container) {
 
 			isGameRunning = true;
 			loaded = true;
+		});
+
+		socket.on('timerUpdate', (data) => {
+			if (window.updateTimer) {
+				window.updateTimer(data.seconds);
+			}
 		});
 
 		socket.on('waiting', (data) => {
@@ -514,7 +518,7 @@ export function launchGame(container) {
 		group.name = 'healthBar';
 
 		for (let i = 0; i < maxHealth; ++i) {
-			const geometry = new THREE.BoxGeometry(width / maxHealth, 0.1, 0.05);
+			const geometry = new THREE.BoxGeometry(width / maxHealth, 0.15, 0.05);
 			const material = new THREE.MeshBasicMaterial({ color: 0xa4133c });
 			const bar = new THREE.Mesh(geometry, material);
 
@@ -555,7 +559,7 @@ export function launchGame(container) {
 			});
 
 			const healthBar = createHealthBar(3);
-			healthBar.position.y = 1.5;
+			healthBar.position.y = 2;
 			tank.add(healthBar);
 
 			if (spawnSlot === myPlayerNumber) {
