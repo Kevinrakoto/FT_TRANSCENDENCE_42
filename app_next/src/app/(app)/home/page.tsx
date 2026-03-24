@@ -18,26 +18,12 @@ export default function HomePage() {
         }
     }, [session, status, router]);
 
-    useEffect(() => {
-        if (status === 'authenticated' && session?.user) {
-            chatSocket.connect(
-                String(session.user.id), 
-                session.user.username || '', 
-                session.user.tankName || ''
-            );
-        }
-    }, [status, session]);
-
     const handleLogout = async () => {
         if (session?.user) {
             chatSocket.disconnect();
-            await fetch('/api/me/online', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isOnline: false })
-            });
         }
-        signOut({ callbackUrl: '/signin' });
+        await signOut({ redirect: false });
+        window.location.href = '/signin';
     };
 
     if (status === 'loading') {
@@ -51,7 +37,7 @@ export default function HomePage() {
     return (
         <div className="game-container">
 
-            <Link href="/friends" className="friends-button" title="friend list">
+            <div className="friends-button" title="friend list">
                 <svg 
                     className="friends-icon" 
                     viewBox="0 0 24 24" 
@@ -67,7 +53,7 @@ export default function HomePage() {
                     />
                 </svg>
                 <NavigationBadges />
-            </Link>
+            </div>
             <button 
                 onClick={handleLogout}
                 className="logout-button"

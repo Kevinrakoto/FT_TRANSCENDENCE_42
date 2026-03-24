@@ -23,12 +23,12 @@ export default function SignupPage() {
     setError('');
     
     if (formData.password !== formData.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
+       setError('Passwords do not match');
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères');
+       setError('Password must be at least 6 characters');
       return;
     }
 
@@ -53,31 +53,29 @@ export default function SignupPage() {
         throw new Error(data.error || 'Error during registration');
       }
 
-      // ✅ Redirection vers signin après inscription réussie
       router.push('/signin?registered=true');
       
     } catch (err: any) {
-      // Si l'API n'existe pas encore, simuler un succès
       console.log('Signup data:', formData);
-      // Pour tester sans API, décommentez la ligne suivante:
-      // router.push('/signin?registered=true');
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="game-container">
-      {/* Bouton retour vers l'accueil */}
+    return (
+    <div className="landing-container">
+      <div className='landing-background'></div>
       <Link href="/" className="back-button">
         ← BACK
       </Link>
-
-      <div className="auth-container">
-        <div className="auth-box signup-box">
-          <h1 className="title-main">INSCRIPTION</h1>
-          
+      <div className="vector-card">
+        <div className="card-illustration">
+          <div className='card-title-wrapper'>
+            <h1 className="vector-title">INSCRIPTION</h1>
+          </div>
+        </div>
+        <div className='card-body'>
           <form onSubmit={handleSubmit} className="auth-form">
 
             <div className="form-group">
@@ -157,7 +155,7 @@ export default function SignupPage() {
             </Link>
           </div>
         </div>
-      </div>
+        </div>
     </div>
   );
 }

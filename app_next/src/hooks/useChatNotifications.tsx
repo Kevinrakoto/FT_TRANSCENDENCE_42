@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react'
+import { useSession } from 'next-auth/react'
 import { chatSocket } from '@/lib/socket-client'
 
 export interface ChatNotification {
@@ -39,10 +40,13 @@ export function useChatNotifications() {
   return context
 }
 
-export function ChatNotificationsProvider({ children, currentUserId }: { children: React.ReactNode; currentUserId?: number }) {
+export function ChatNotificationsProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession()
   const [notifications, setNotifications] = useState<ChatNotification[]>([])
   const [friendRequestsCount, setFriendRequestsCount] = useState(0)
+  const currentUserId = session?.user?.id ? Number(session.user.id) : undefined
   const currentUserIdRef = useRef(currentUserId)
+  const isSessionLoaded = status !== 'loading'
   
   useEffect(() => {
     currentUserIdRef.current = currentUserId
@@ -51,15 +55,18 @@ export function ChatNotificationsProvider({ children, currentUserId }: { childre
   const refreshFriendRequests = useCallback(async () => {
     if (!currentUserIdRef.current) return
     try {
+      console.log('[ChatNotifications] Refreshing friend requests for user:', currentUserIdRef.current)
       const res = await fetch('/api/friends/pending')
       if (res.ok) {
         const data = await res.json()
+        console.log('[ChatNotifications] Friend requests:', data.length)
         setFriendRequestsCount(data.length)
         
-        data.forEach((req: any) => {
-          const exists = notifications.some(n => n.type === 'friend_request' && n.fromUserId === req.sender.id)
-          if (!exists) {
-            const notification: ChatNotification = {
+        setNotifications(prev => {
+          const existingIds = new Set(prev.filter(n => n.type === 'friend_request').map(n => n.id))
+          const newNotifications = data
+            .filter((req: any) => !existingIds.has(`fr-${req.id}`))
+            .map((req: any): ChatNotification => ({
               id: `fr-${req.id}`,
               type: 'friend_request',
               fromUserId: req.sender.id,
@@ -67,22 +74,24 @@ export function ChatNotificationsProvider({ children, currentUserId }: { childre
               fromTankName: req.sender.tankName,
               timestamp: new Date(req.createdAt),
               read: false,
-            }
-            setNotifications(prev => [notification, ...prev].slice(0, 50))
-          }
+            }))
+          return [...newNotifications, ...prev].slice(0, 50)
         })
       }
     } catch (error) {
-      console.error('Error fetching friend requests:', error)
+      console.error('[ChatNotifications] Error fetching friend requests:', error)
     }
-  }, [notifications])
+  }, [])
 
   useEffect(() => {
+    if (!isSessionLoaded || !currentUserId) return
+    
+    console.log('[ChatNotifications] Setting up for user:', currentUserId)
     refreshFriendRequests()
     
     const interval = setInterval(refreshFriendRequests, 30000)
     return () => clearInterval(interval)
-  }, [refreshFriendRequests])
+  }, [isSessionLoaded, currentUserId, refreshFriendRequests])
 
   useEffect(() => {
     if (!currentUserIdRef.current) return
@@ -91,6 +100,7 @@ export function ChatNotificationsProvider({ children, currentUserId }: { childre
       const userId = currentUserIdRef.current
       if (!userId || data.userId === userId) return
 
+      console.log('[ChatNotifications] New message received:', data)
       const notification: ChatNotification = {
         id: `msg-${data.id}-${Date.now()}`,
         type: 'message',

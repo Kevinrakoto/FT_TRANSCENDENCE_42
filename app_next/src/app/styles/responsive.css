@@ -1,0 +1,156 @@
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 1024px) {
+  .game-menu {
+    left: 40px;
+  }
+  
+  .tank-decoration {
+    font-size: 5rem;
+    bottom: 30px;
+    right: 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  .signin-button,
+  .back-button {
+    top: 20px;
+    font-size: 0.75rem;
+    padding: 10px 20px;
+  }
+  
+  .back-button {
+    left: 20px;
+  }
+  
+  .signin-button {
+    right: 20px;
+  }
+  
+  .friends-button {
+    top: 20px;
+    width: 50px;
+    height: 50px;
+  }
+  
+  .game-header {
+    top: 80px;
+  }
+  
+  .title-top {
+    font-size: 1.2rem;
+    letter-spacing: 4px;
+  }
+  
+  .title-main {
+    font-size: 2.7rem;
+    letter-spacing: 6px;
+  }
+  
+  .game-menu {
+    left: 20px;
+  }
+  
+  .menu-item {
+    font-size: 1rem;
+  }
+  
+  .tank-decoration {
+    display: none;
+  }
+  
+  .auth-container {
+    padding: 80px 15px 40px;
+  }
+  
+  .auth-box {
+    padding: 30px 20px;
+  }
+  
+  .form-input {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+  }
+  
+  .submit-button {
+    padding: 12px 30px;
+    font-size: 0.9rem;
+  }
+  
+  /* Landing Page */
+  .landing-logo {
+    font-size: 4rem;
+  }
+  
+  .title-line-2 {
+    font-size: 3.5rem;
+    letter-spacing: 12px;
+  }
+  
+  .landing-subtitle {
+    font-size: 1rem;
+  }
+  
+  .auth-btn {
+    padding: 20px 30px;
+    gap: 20px;
+  }
+  
+  .btn-icon {
+    font-size: 2.5rem;
+  }
+  
+  .btn-title {
+    font-size: 1.5rem;
+  }
+  
+  .btn-subtitle {
+    font-size: 0.8rem;
+  }
+  
+  .features {
+    gap: 25px;
+  }
+  
+  .feature-icon {
+    font-size: 1.5rem;
+  }
+  
+  .feature-text {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .title-main {
+    font-size: 2rem;
+    letter-spacing: 4px;
+  }
+  
+  .landing-header {
+    margin-bottom: 40px;
+  }
+  
+  .title-line-2 {
+    font-size: 2.5rem;
+    letter-spacing: 8px;
+  }
+  
+  .auth-buttons {
+    gap: 20px;
+  }
+  
+  .auth-btn {
+    padding: 18px 25px;
+  }
+  
+  .btn-title {
+    font-size: 1.3rem;
+  }
+  
+  .features {
+    flex-direction: column;
+    gap: 20px;
+  }
+}
