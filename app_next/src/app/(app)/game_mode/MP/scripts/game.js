@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { io } from 'socket.io-client';
 
-export function launchGame(container) {
+export function launchGame(container, callbacks, userData, gameMode) {
 	let isMounted = true;
 	let socket = null;
 	let myPlayerNumber = null;
@@ -161,10 +161,15 @@ export function launchGame(container) {
 				transports: ['polling', 'websocket'],
 				path: '/socket.io',
 				rejectUnauthorized: false,
-				autoConnect: false
+				autoConnect: false,
+				auth: {
+					userId: userData.id,
+					username: userData.username,
+					gameMode: gameMode
+				},
 			});
-			setupSocketListener();
 			socket.connect();
+			setupSocketListener();
 		}
 	};
 
@@ -184,7 +189,12 @@ export function launchGame(container) {
 	function animate() {
 		const delta = clock.getDelta();
 
-		if (loaded === false || isGameRunning === false) return;
+		if (loaded === false) {
+			if (isGameRunning === false) {
+				renderer.render( scene, camera );
+			}
+			return;
+		}
 
 		const directions = ['w', 'a', 's', 'd'];
 		let newestTime = 0;
@@ -208,6 +218,7 @@ export function launchGame(container) {
 			bullet.position.copy(player.position);
 			bullet.position.y += 0.8;
 			bullet.userData.dir = bulldir;
+			bullet.userData.owner = myPlayerNumber;
 			scene.add(bullet);
 			bullets.push(bullet);
 
@@ -215,7 +226,8 @@ export function launchGame(container) {
 				x: bullet.position.x,
 				y: bullet.position.y,
 				z: bullet.position.z,
-				dir: bullet.userData.dir
+				dir: bullet.userData.dir,
+				owner: myPlayerNumber
 			});
 
 			canShoot = false;
@@ -233,10 +245,10 @@ export function launchGame(container) {
 			const X = player.position.x;
 			const Z = player.position.z
 		
-			if (lastPressed === 'w') player.position.z -= speed;
-			if (lastPressed === 's') player.position.z += speed;
 			if (lastPressed === 'a') player.position.x -= speed;
 			if (lastPressed === 'd') player.position.x += speed;
+			if (lastPressed === 'w') player.position.z -= speed;
+			if (lastPressed === 's') player.position.z += speed;
 
 			if (checkCollision(player)) {
 				player.position.x = X;
@@ -250,7 +262,7 @@ export function launchGame(container) {
 			});
 		}
 
-		let bSpeed = 25 * delta;
+		let bSpeed = 40 * delta;
 
 		for (let i = bullets.length - 1; i >= 0; --i) {
 			const bullet = bullets[i];
@@ -279,12 +291,16 @@ export function launchGame(container) {
 			}
 			for (let playerNumber in remotePlayers) {
 				const enemy = remotePlayers[playerNumber];
-				if (enemy.userData.dead === false && bulletBox.intersectsBox(new THREE.Box3().setFromObject(enemy))) {
+				const enemyBox =
+					new THREE.Box3().setFromObject(enemy.getObjectByName('physicalBody'));
+				if (enemy.userData.dead === false
+					&& bulletBox.intersectsBox(enemyBox)) {
 					hit = true;
 					socket.emit('hitPlayer', {
-						playerNumber: playerNumber
+						playerNumber: playerNumber,
+						shooter: bullet.userData.owner
 					});
-					hitPlayer(playerNumber);
+					hitPlayer(playerNumber, bullet.userData.owner);
 					break ;
 				}
 			}
@@ -314,7 +330,7 @@ export function launchGame(container) {
 	function updateHealthBar(player) {
 		const healthBar = player.getObjectByName('healthBar');
 
-		healthBar.lookAt(0, 100000, 10000);
+		healthBar.lookAt(0, 10000000, 10000);
 	}
 
 	function setupSocketListener() {
@@ -330,39 +346,57 @@ export function launchGame(container) {
 				}
 			}
 
+			if (player) {
+				const myName = data.playerNames[data.myPlayerNumber - 1];
+				const nameLabel = createNameLabel(myName);
+				nameLabel.position.y = 2.5;
+				player.add(nameLabel);
+			}
+
+			for (let key in remotePlayers) {
+				const enemyName = data.playerNames[parseInt(key) - 1];
+				const nameLabel = createNameLabel(enemyName);
+				nameLabel.position.y = 2.5;
+				remotePlayers[key].add(nameLabel);
+			}
+
 			isGameRunning = true;
 			loaded = true;
+			callbacks.onGameStart();
 		});
 
-		socket.on('timerUpdate', (data) => {
-			if (window.updateTimer) {
-				window.updateTimer(data.seconds);
-			}
+		socket.on('timeUpdate', (data) => {
+			callbacks.onTimeUpdate(data.seconds);
+		});
+
+		socket.on('gameOver', (data) => {
+			isGameRunning = false;
+			callbacks.onGameOver(data);
 		});
 
 		socket.on('waiting', (data) => {
 			console.log(`Waiting for players: ${data.current}/${data.required}`);
 		});
 
-	socket.on('playerMoved', (data) => {
-		const enemy = remotePlayers[data.playerNumber];
-		if (enemy) {
-			enemy.position.x = data.x;
-			enemy.position.z = data.z;
-			enemy.rotation.y = data.rotation;
-			if (enemy.userData.dead) {
-				enemy.userData.dead = false;
-				enemy.userData.health = enemy.userData.maxHealth;
-				const healthBar = enemy.getObjectByName('healthBar');
-				if (healthBar) {
-					healthBar.children.forEach(bar => {
-						bar.material.color.set(0xa4133c);
-						bar.material.needsUpdate = true;
-					});
+		socket.on('playerMoved', (data) => {
+			const enemy = remotePlayers[data.playerNumber];
+			if (enemy) {
+				enemy.position.x = data.x;
+				enemy.position.z = data.z;
+				enemy.rotation.y = data.rotation;
+				if (enemy.userData.dead) {
+					enemy.userData.dead = false;
+					enemy.userData.health = enemy.userData.maxHealth;
+					const healthBar = enemy.getObjectByName('healthBar');
+					if (healthBar) {
+						healthBar.children.forEach(bar => {
+							bar.material.color.set(0xfafafa);
+							bar.material.needsUpdate = true;
+						});
+					}
 				}
 			}
-		}
-	});
+		});
 
 		socket.on('blockHit', (data) => {
 			hitBlock(data.x, data.y);
@@ -375,6 +409,7 @@ export function launchGame(container) {
 
 			bullet.position.set(data.x, data.y, data.z);
 			bullet.userData.dir = data.dir;
+			bullet.userData.owner = data.owner;
 			scene.add(bullet);
 			if (remotePlayers[data.playerNumber]) {
 				remotePlayers[data.playerNumber].userData.bullets.push(bullet);
@@ -390,8 +425,13 @@ export function launchGame(container) {
 				remotePlayers[data.playerNumber].userData.bullets.splice(data.i, 1);
 			}
 		});
+
 		socket.on('playerShot', (data) => {
-			hitPlayer(data.playerNumber);
+			hitPlayer(data.playerNumber, data.shooter);
+		});
+
+		socket.on('leaderboardUpdate', (data) => {
+			callbacks.onLeaderboardUpdate(data);
 		});
 	}
 
@@ -425,7 +465,7 @@ export function launchGame(container) {
 		}
 	}
 
-	function hitPlayer( playerNumber ) {
+	function hitPlayer( playerNumber, shooter ) {
 		let playerhit;
 		if (playerNumber == myPlayerNumber) playerhit = player;
 		else playerhit = remotePlayers[playerNumber];
@@ -459,7 +499,10 @@ export function launchGame(container) {
 						if (playerhit.userData.health <= 0) {
 							playerhit.userData.dead = true;
 							playerhit.position.x = 200;
-							if (playerNumber == myPlayerNumber) respawn();
+							if (playerNumber == myPlayerNumber) {
+								socket.emit('playerDied', {number: shooter});
+								respawn();
+							}
 						}
 					}, 50);
 				}
@@ -501,7 +544,7 @@ export function launchGame(container) {
 		const healthBar = player.getObjectByName('healthBar');
 		if (healthBar) {
 			healthBar.children.forEach(bar => {
-				bar.material.color.set(0xa4133c);
+				bar.material.color.set(0xfafafa);
 				bar.material.needsUpdate = true;
 			});
 		}
@@ -519,7 +562,7 @@ export function launchGame(container) {
 
 		for (let i = 0; i < maxHealth; ++i) {
 			const geometry = new THREE.BoxGeometry(width / maxHealth, 0.15, 0.05);
-			const material = new THREE.MeshBasicMaterial({ color: 0xa4133c });
+			const material = new THREE.MeshBasicMaterial({ color: 0xfafafa });
 			const bar = new THREE.Mesh(geometry, material);
 
 			bar.name = 'healthBarSegment';
@@ -530,6 +573,30 @@ export function launchGame(container) {
 		}
 
 		return ( group );
+	}
+
+	function createNameLabel( name ) {
+		const canvas = document.createElement('canvas');
+		const ctx = canvas.getContext('2d');
+		canvas.width = 256;
+		canvas.height = 64;
+
+		ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+		ctx.font = 'bold 64px Arial';
+		ctx.fillStyle = 'white';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+			map: new THREE.CanvasTexture(canvas),
+			depthTest: false,
+		}));
+
+		sprite.scale.set(1.25, 0.3125, 0.625);
+		return (sprite);
 	}
 
 	function createBlock( type, x, y ) {
@@ -544,6 +611,7 @@ export function launchGame(container) {
 			tank.scale.set(1.2, 1.2, 1.2);
 			tank.traverse((c) => {
 				if(c.isMesh) {
+					c.name = 'physicalBody';
 					c.material = c.material.clone();
 					if (spawnSlot === myPlayerNumber) {
 						if (c.material.color.g > c.material.color.r && c.material.color.g > c.material.color.b) {
@@ -605,6 +673,11 @@ export function launchGame(container) {
 				clone.userData.health  = 3;
 				clone.userData.isDestructible = true;
 			}
+			if (type === 9) {
+				clone.userData.maxHealth = 2;
+				clone.userData.health  = 2;
+				clone.userData.isDestructible = true;
+			}
 			if (type === 10)
 				clone.position.set(realX, -blockSize, realZ);
 			scene.add(clone);
@@ -613,7 +686,8 @@ export function launchGame(container) {
 	}
 
 	function checkCollision(player) {
-		const playerBox = new THREE.Box3().setFromObject(player);
+		const playerBox =
+			new THREE.Box3().setFromObject(player.getObjectByName('physicalBody'));
 		playerBox.expandByScalar(-0.12);
 		for (let row of blocks) {
 			for (let block of row) {
@@ -625,7 +699,8 @@ export function launchGame(container) {
 		}
 
 		for (let key in remotePlayers) {
-			const enemyBox = new THREE.Box3().setFromObject(remotePlayers[key]);
+			const enemyBox =
+				new THREE.Box3().setFromObject(remotePlayers[key].getObjectByName('physicalBody'));
 			if (playerBox.intersectsBox(enemyBox)) return true;
 		}
 		return false;
