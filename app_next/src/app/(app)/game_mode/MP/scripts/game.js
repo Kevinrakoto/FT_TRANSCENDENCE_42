@@ -794,6 +794,30 @@ export function launchGame(container, callbacks, userData, gameMode) {
 		return (sprite);
 	}
 
+	function createNameLabel( name ) {
+		const canvas = document.createElement('canvas');
+		const ctx = canvas.getContext('2d');
+		canvas.width = 256;
+		canvas.height = 64;
+
+		ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+		ctx.font = 'bold 64px Arial';
+		ctx.fillStyle = 'white';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+			map: new THREE.CanvasTexture(canvas),
+			depthTest: false,
+		}));
+
+		sprite.scale.set(1.25, 0.3125, 0.625);
+		return (sprite);
+	}
+
 	function createBlock( type, x, y ) {
 		let clone;
 		const realX = (x * blockSize) + (blockSize / 2) - ((map[y].length * blockSize) / 2);
