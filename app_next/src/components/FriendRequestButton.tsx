@@ -22,6 +22,7 @@ interface Props {
 export default function FriendRequestButton({ username, onRequestSent, onUserSelect }: Props) {
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<'idle' | 'sent' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
   const [suggestions, setSuggestions] = useState<SuggestedUser[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
@@ -42,19 +43,17 @@ export default function FriendRequestButton({ username, onRequestSent, onUserSel
       clearTimeout(searchTimeout)
     }
 
-    console.log('Search username:', username)
-
     if (!username || username.length < 2) {
       setSuggestions([])
+      setStatus('idle')
+      setErrorMsg('')
       return
     }
 
     const timeout = setTimeout(async () => {
-      console.log('Fetching search for:', username)
       try {
         const res = await fetch(`/api/friends/search?q=${encodeURIComponent(username)}`)
         const data = await res.json()
-        console.log('Search results:', data)
         if (Array.isArray(data)) {
           setSuggestions(data)
           setShowSuggestions(true)
@@ -75,6 +74,7 @@ export default function FriendRequestButton({ username, onRequestSent, onUserSel
     if (!target) return
 
     setLoading(true)
+    setErrorMsg('')
     try {
       const res = await fetch('/api/friends/request', {
         method: 'POST',
@@ -82,20 +82,27 @@ export default function FriendRequestButton({ username, onRequestSent, onUserSel
         body: JSON.stringify({ username: target })
       })
       
+      const data = await res.json()
+      
       if (res.ok) {
         setStatus('sent')
         onRequestSent?.()
         setSuggestions(prev => prev.map(s => 
           s.username === target ? { ...s, friendshipStatus: 'pending' } : s
         ))
+        setTimeout(() => {
+          setStatus('idle')
+          setSuggestions(prev => prev.map(s => 
+            s.username === target ? { ...s, friendshipStatus: 'none' } : s
+          ))
+        }, 3000)
       } else {
-        const data = await res.json()
         setStatus('error')
-        alert(data.error)
+        setErrorMsg(data.error || 'Failed to send request')
       }
     } catch (error) {
       setStatus('error')
-      alert('Network error')
+      setErrorMsg('Network error. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -112,18 +119,20 @@ export default function FriendRequestButton({ username, onRequestSent, onUserSel
   const pendingRequest = Array.isArray(suggestions) && suggestions.find(s => s.username === username && s.friendshipStatus === 'pending')
   const isFriend = Array.isArray(suggestions) && suggestions.find(s => s.username === username && s.friendshipStatus === 'friends')
 
-  if (status === 'sent' || pendingRequest) {
-    return <span className="text-green-500 font-semibold">Request sent</span>
-  }
-
   return (
     <div ref={containerRef} className="relative">
+      {status === 'sent' && (
+        <span className="text-green-500 font-semibold mr-2">Request sent!</span>
+      )}
+      {status === 'error' && errorMsg && (
+        <span className="text-red-500 font-semibold mr-2">{errorMsg}</span>
+      )}
       {isFriend && (
         <span className="text-blue-500 font-semibold mr-2">Already friends</span>
       )}
       <button
         onClick={() => sendRequest()}
-        disabled={loading || !!isFriend}
+        disabled={loading || !!isFriend || !username.trim()}
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Sending...' : 'Add friend'}

@@ -19,6 +19,16 @@
   align-items: center;
   justify-content: center;
   padding: 12px;
+  outline: none;
+}
+
+.logout-button:focus {
+  box-shadow: 0 0 0 3px rgba(255, 0, 110, 0.5), 0 0 20px rgba(255, 0, 110, 0.3);
+}
+
+.logout-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 10px var(--red);
 }
 
 .logout-icon {
@@ -177,6 +187,16 @@
   align-items: center;
   justify-content: center;
   padding: 12px;
+  outline: none;
+}
+
+.friends-button:focus {
+  box-shadow: 0 0 0 3px rgba(131, 56, 236, 0.5), 0 0 20px rgba(0, 217, 255, 0.3);
+}
+
+.friends-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 10px var(--neon-blue);
 }
 
 .friends-icon {

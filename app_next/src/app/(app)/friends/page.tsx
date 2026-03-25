@@ -34,6 +34,7 @@ export default function FriendsPage() {
   const [friends, setFriends] = useState<Friend[]>([])
   const [onlinePlayers, setOnlinePlayers] = useState<Set<number>>(new Set())
   const [searchUsername, setSearchUsername] = useState('')
+  const [removingId, setRemovingId] = useState<number | null>(null)
   const { notifications, unreadMessagesCount } = useChatNotifications()
 
   useEffect(() => {
@@ -126,6 +127,29 @@ export default function FriendsPage() {
     chatSocket.emit('request-online-players', {})
   }
 
+  const removeFriend = async (friendId: number) => {
+    if (!confirm('Are you sure you want to remove this friend?')) return
+    
+    setRemovingId(friendId)
+    try {
+      const res = await fetch(`/api/friends/delete?id=${friendId}`, {
+        method: 'DELETE'
+      })
+      
+      if (res.ok) {
+        setFriends(prev => prev.filter(f => f.id !== friendId))
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to remove friend')
+      }
+    } catch (error) {
+      console.error('Error removing friend:', error)
+      alert('Network error')
+    } finally {
+      setRemovingId(null)
+    }
+  }
+
   useEffect(() => {
     fetchFriends()
   }, [notifications])
@@ -207,6 +231,14 @@ export default function FriendsPage() {
                       Chat
                     </Link>
                   )}
+                  <button 
+                    onClick={() => removeFriend(friend.id)}
+                    disabled={removingId === friend.id}
+                    className="remove-button"
+                    title="Remove friend"
+                  >
+                    {removingId === friend.id ? '...' : '✕'}
+                  </button>
                 </div>
               ))}
             </div>
@@ -361,6 +393,31 @@ export default function FriendsPage() {
 
         .chat-button.has-unread {
           background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .remove-button {
+          background: rgba(239, 68, 68, 0.2);
+          border: 1px solid rgba(239, 68, 68, 0.5);
+          color: #ef4444;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .remove-button:hover {
+          background: #ef4444;
+          color: white;
+        }
+
+        .remove-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         .unread-badge {

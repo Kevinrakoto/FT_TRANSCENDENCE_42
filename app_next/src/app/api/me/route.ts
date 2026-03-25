@@ -49,3 +49,35 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { tankName, tankColor } = body
+
+    const updatedUser = await db.user.update({
+      where: { id: session.user.id },
+      data: {
+        ...(tankName && { tankName }),
+        ...(tankColor && { tankColor }),
+      },
+    })
+
+    return NextResponse.json({ user: updatedUser })
+
+  } catch (error) {
+    console.error('Error updating user:', error)
+    return NextResponse.json(
+      { error: 'Failed to update user' },
+      { status: 500 }
+    )
+  }
+}
