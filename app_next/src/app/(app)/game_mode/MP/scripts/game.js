@@ -797,12 +797,15 @@ export function launchGame(container, callbacks, userData, gameMode) {
 	function createNameLabel( name ) {
 		const canvas = document.createElement('canvas');
 		const ctx = canvas.getContext('2d');
-		canvas.width = 256;
-		canvas.height = 64;
 
-		ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		const textWidth = (name.length * 40) + 60;
+		canvas.width = Math.max(256, textWidth);
+		canvas.height = 128;
 
+		ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+		ctx.beginPath();
+		ctx.roundRect(0, 0, canvas.width, canvas.height, 8);
+		ctx.fill();
 		ctx.font = 'bold 64px Arial';
 		ctx.fillStyle = 'white';
 		ctx.textAlign = 'center';
@@ -814,7 +817,9 @@ export function launchGame(container, callbacks, userData, gameMode) {
 			depthTest: false,
 		}));
 
-		sprite.scale.set(1.25, 0.3125, 0.625);
+		const ratio = canvas.width / canvas.height;
+		sprite.scale.set(1 * ratio * 0.5, 0.5, 1);
+
 		return (sprite);
 	}
 
