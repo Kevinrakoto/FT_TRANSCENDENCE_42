@@ -7,7 +7,6 @@ import { launchGame } from './scripts/game.js';
 
 export default function MultiplayerGamePage() {
 	const {data : session, status} = useSession();
-	console.log('Session:', session);
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [gameMode, setGameMode] = useState<number | null>(null);

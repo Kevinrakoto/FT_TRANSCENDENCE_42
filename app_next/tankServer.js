@@ -127,6 +127,15 @@ module.exports = (io) => {
 					});
 
 				});
+				playerSocket.on('reload', () => {
+					matchPlayers.forEach((other) => {
+						if (other.id !== playerSocket.id) {
+							other.emit('playerReloading', {
+								playerNumber: playerNumber
+							});
+						}
+					});
+				});
 			});
 
 			let timer = 300;
