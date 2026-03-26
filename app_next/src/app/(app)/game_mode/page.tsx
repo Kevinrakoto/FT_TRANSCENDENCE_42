@@ -58,7 +58,7 @@ export default function GameModePage() {
           </Link>
         </div>
 
-        <div className="mode-selection-footer">
+        {/* <div className="mode-selection-footer">
           <div className="stat-item">
             <span className="stat-icon">👤</span>
             <span className="stat-label">Players Online</span>
@@ -74,7 +74,7 @@ export default function GameModePage() {
             <span className="stat-label">Active Battles</span>
             <span className="stat-value">89</span>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -14,8 +14,8 @@ const handle = app.getRequestHandler();
 const initTankGame = require('./tankServer');
 
 const httpsOptions = {
-  key: fs.readFileSync('./certificates/private-key.pem'),
-  cert: fs.readFileSync('./certificates/certificate.pem'),
+  key: fs.readFileSync('/app/certificates/private-key.pem'),
+  cert: fs.readFileSync('/app/certificates/cert.pem'),
 };
 
 const onlinePlayers = new Map();

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { io } from 'socket.io-client';
 
-export function launchGame(container) {
+export function launchGame(container, callbacks, userData, gameMode) {
 	let isMounted = true;
 	let socket = null;
 	let myPlayerNumber = null;
@@ -39,8 +39,8 @@ export function launchGame(container) {
 	const input = {};
 	let lastPressed = null;
 	let bulldir = 's';
-	let canShoot = true;
-	let cooldown = 400;
+	let spaceReleased = true;
+	let reloadSpeed = 1200;
 
 	const onResize = () => {
 		camera.aspect = window.innerWidth / window.innerHeight;
@@ -59,6 +59,9 @@ export function launchGame(container) {
 	const onKeyUp = (i) => {
 		const k = i.key.toLowerCase();
 		delete input[k];
+		if (k === ' ') {
+			spaceReleased = true;
+		}
 	};
 
 	const onBlur = () => {
@@ -71,61 +74,61 @@ export function launchGame(container) {
 	window.addEventListener('keyup', onKeyUp);
 	window.addEventListener('blur', onBlur);
 
-	const models = { tank: null, dirt: null, wood: null, lava: null, brickA: null, brickB: null, glass: null, metal: null, stone: null, tree: null, water: null };
+	const models = {};
 
 	let player;
 
 	const maps = {
 		one:
-		[[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-		[3, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 3],
-		[3, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 3],
-		[3, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 3],
-		[3, 0, 2, 0, 2, 0, 2, 1, 2, 0, 2, 0, 2, 0, 3],
-		[3, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 3],
-		[3, 0, 2, 0, 2, 0, 0, 0, 0, 0, 2, 0, 2, 0, 3],
-		[3, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 3],
-		[3, 1, 0, 2, 2, 0, 0, 0, 0, 0, 2, 2, 0, 1, 3],
-		[3, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 3],
-		[3, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 3],
-		[3, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 3],
-		[3, 0, 2, 0, 2, 0, 0, 0, 0, 0, 2, 0, 2, 0, 3],
-		[3, -3, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, -4, 3],
-		[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]],
+		[[5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+		 [5,-1, 0, 0, 0, 0, 0, 0, 1, 9, 9, 0, 0,-2, 5],
+		 [5, 0, 7, 0, 0, 0, 0, 0, 2, 0, 9, 0, 0, 0, 5],
+		 [5, 0, 0, 0, 8, 8, 0, 0, 1, 9, 9, 0, 8, 0, 5],
+		 [5, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+		 [5, 0, 0, 0, 1, 2, 1, 0, 0, 3, 3, 3, 3, 3, 5],
+		 [5, 1, 0, 0, 9, 0, 9, 0, 0, 3, 0, 0, 0, 0, 5],
+		 [5, 0, 0, 0, 9, 0, 9, 0, 0, 3, 0, 1, 1, 0, 5],
+		 [5, 3, 3, 0, 9, 2, 9, 0, 0, 3, 0, 0, 1, 0, 5],
+		 [5, 0, 3, 0, 0, 0, 0, 0, 7, 3, 0, 0, 0, 0, 5],
+		 [5, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 7, 0, 8, 5],
+		 [5, 0, 0, 0, 0, 0, 0, 8, 8, 0, 0, 0, 0, 1, 5],
+		 [5, 0, 8, 0, 0, 9, 0, 0, 0, 0, 1, 0, 0, 0, 5],
+		 [5,-3, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0,-4, 5],
+		 [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]],
 
 		two:
-		[[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-		[1, -1, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, -2, 1],
-		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-		[1, 2, 0, 2, 0, 2, 0, 0, 0, 2, 0, 2, 0, 2, 1],
-		[1, 3, 0, 3, 2, 2, 0, 2, 0, 2, 2, 3, 0, 3, 1],
-		[1, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 0, 1],
-		[1, 9, 9, 0, 0, 2, 0, 9, 0, 2, 0, 0, 9, 9, 1],
-		[1, 9, 9, 9, 0, 2, 2, 9, 2, 2, 0, 9, 9, 9, 1],
-		[1, 9, 9, 9, 9, 2, 0, 9, 0, 2, 9, 9, 9, 9, 1],
-		[1, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1],
-		[1, 0, 0, 0, 0, 2, 0, 9, 0, 2, 0, 0, 0, 0, 1],
-		[1, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 1],
-		[1, 0, 2, 0, 2, 0, 2, 2, 2, 0, 2, 0, 2, 0, 1],
-		[1, -3, 2, 0, 2, 0, 2, 7, 2, 0, 2, 0, 2, -4, 1],
-		[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
+		[[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+		 [4,-1, 0, 0, 0, 0, 0, 10,1, 0, 0, 0, 0,-2, 4],
+		 [4, 0, 0, 7, 0, 0, 0, 10,0, 9, 9, 9, 0, 0, 4],
+		 [4, 0, 0, 0, 0, 0, 0, 10,0, 9, 0, 9, 0, 0, 4],
+		 [4, 0, 8, 0, 0, 8, 0, 10,0, 2, 0, 2, 0, 0, 4],
+		 [4, 0, 0, 0, 0, 0, 0, 10,0, 9, 0, 9, 0, 0, 4],
+		 [4, 1, 2, 1, 0, 0, 0, 10,0, 9, 9, 9, 0, 0, 4],
+		 [4, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 4],
+		 [4, 0, 0, 0, 0, 0, 0, 10,0, 7, 0, 0, 0, 0, 4],
+		 [4, 0, 8, 0, 0, 8, 0, 10,0, 0, 0, 7, 0, 0, 4],
+		 [4, 0, 0, 0, 0, 0, 0, 10,0, 0, 1, 1, 1, 0, 4],
+		 [4, 0, 7, 0, 0, 7, 0, 10,0, 0, 0, 0, 0, 0, 4],
+		 [4, 0, 0, 0, 0, 0, 0, 10,0, 8, 0, 8, 0, 0, 4],
+		 [4,-3, 0, 0, 0, 0, 0, 10,1, 0, 0, 0, 0,-4, 4],
+		 [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]],
 
 		three:
-		[[7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7],
-		[7, -1, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, -2, 7],
-		[7, 0, 0, 0, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 7],
-		[7, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7],
-		[7, 1, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 7],
-		[7, 2, 0, 2, 2, 2, 0, 2, 2, 0, 10, 10, 0, 10, 7],
-		[7, 2, 0, 0, 0, 2, 0, 0, 0, 0, 10, 0, 0, 0, 7],
-		[7, 0, 0, 0, 0, 10, 10, 0, 10, 10, 10, 0, 2, 2, 7],
-		[7, 2, 2, 2, 0, 10, 2, 0, 2, 2, 0, 0, 0, 0, 7],
-		[7, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 1, 0, 7],
-		[7, 10, 10, 10, 0, 10, 0, 1, 0, 2, 0, 1, 0, 0, 7],
-		[7, 0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 1, 2, 2, 7],
-		[7, 2, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 7],
-		[7, -3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -4, 7],
-		[7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]],
+		[[6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+		 [6,-1, 0, 0, 0, 0, 0, 1, 0, 8, 0, 0, 0,-2, 6],
+		 [6, 0, 0, 8, 8, 0, 0, 3, 3, 3, 0, 0, 0, 0, 6],
+		 [6, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 6],
+		 [6, 0, 0, 0, 1, 0, 0, 9, 9, 0, 0, 0, 0, 7, 6],
+		 [6, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 7, 0, 6],
+		 [6, 8, 0, 0, 0, 7, 0, 2, 0, 0, 0, 0, 0, 0, 6],
+		 [6, 1, 0, 9, 9, 0, 0, 0, 0, 0, 8, 8, 0, 1, 6],
+		 [6, 0, 0, 2, 0, 0, 0, 0, 7, 0, 0, 0, 0, 8, 6],
+		 [6, 0, 0, 9, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6],
+		 [6, 7, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6],
+		 [6, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6],
+		 [6, 0, 0, 0, 0, 3, 3, 3, 0, 0, 8, 8, 0, 0, 6],
+		 [6,-3, 0, 0, 0, 8, 0, 1, 0, 0, 0, 0, 0,-4, 6],
+		 [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]],
 	};
 
 	let map;
@@ -133,25 +136,21 @@ export function launchGame(container) {
 	const blocks = [];
 
 	loader.load('/tank-game/gltf/Tank.glb', (g) => { models.tank = g.scene; });
-	loader.load('/tank-game/gltf/dirt.gltf', (g) => { models.dirt = g.scene; });
-	loader.load('/tank-game/gltf/wood.gltf', (g) => { models.wood = g.scene; });
-	loader.load('/tank-game/gltf/bricks_A.gltf', (g) => { models.brickA = g.scene; });
-	loader.load('/tank-game/gltf/bricks_B.gltf', (g) => { models.brickB = g.scene; });
 	loader.load('/tank-game/gltf/glass.gltf', (g) => { models.glass = g.scene; });
-	loader.load('/tank-game/gltf/lava.gltf', (g) => { models.lava = g.scene; });
 	loader.load('/tank-game/gltf/metal.gltf', (g) => { models.metal = g.scene; });
-	loader.load('/tank-game/gltf/stone.gltf', (g) => { models.stone = g.scene; });
-	loader.load('/tank-game/gltf/tree.gltf', (g) => { models.tree = g.scene; });
 	loader.load('/tank-game/gltf/water.gltf', (g) => { models.water = g.scene; });
+	loader.load('/tank-game/gltf/wood.gltf', (g) => { models.wood = g.scene; });
+	loader.load('/tank-game/gltf/dirt.gltf', (g) => { models.dirt = g.scene; });
+	loader.load('/tank-game/gltf/bricks_B.gltf', (g) => { models.bricks = g.scene; });
+	loader.load('/tank-game/gltf/lava.gltf', (g) => { models.lava = g.scene; });
 	loader.load('/tank-game/gltf/colored_block_green.gltf', (g) => { models.green = g.scene; });
 	loader.load('/tank-game/gltf/colored_block_blue.gltf', (g) => { models.blue = g.scene; });
-	loader.load('/tank-game/gltf/colored_block_red.gltf', (g) => { models.red = g.scene; });
 	loader.load('/tank-game/gltf/colored_block_yellow.gltf', (g) => { models.yellow = g.scene; });
 
 	manager.onLoad = () => {
 		if (!isMounted) return;
 
-		const box = new THREE.Box3().setFromObject(models.dirt);
+		const box = new THREE.Box3().setFromObject(models.glass);
 		const size = new THREE.Vector3();
 		box.getSize(size);
 		blockSize = size.x;
@@ -161,10 +160,15 @@ export function launchGame(container) {
 				transports: ['polling', 'websocket'],
 				path: '/socket.io',
 				rejectUnauthorized: false,
-				autoConnect: false
+				autoConnect: false,
+				auth: {
+					userId: userData.id,
+					username: userData.username,
+					gameMode: gameMode
+				},
 			});
-			setupSocketListener();
 			socket.connect();
+			setupSocketListener();
 		}
 	};
 
@@ -184,7 +188,12 @@ export function launchGame(container) {
 	function animate() {
 		const delta = clock.getDelta();
 
-		if (loaded === false || isGameRunning === false) return;
+		if (loaded === false) {
+			if (isGameRunning === false) {
+				renderer.render( scene, camera );
+			}
+			return;
+		}
 
 		const directions = ['w', 'a', 's', 'd'];
 		let newestTime = 0;
@@ -200,7 +209,22 @@ export function launchGame(container) {
 		lastPressed = activeDir;
 		if (lastPressed) bulldir = lastPressed;
 
-		if (input[' '] && canShoot && player.userData.dead === false) {
+		if (input['r'] && player.userData.ammo < player.userData.maxAmmo
+			&& player.userData.isReloading === false && player.userData.dead === false) {
+			socket.emit('reload');
+			startReload(player);
+		}
+
+		if (input[' '] && spaceReleased && player.userData.ammo > 0
+			&& player.userData.isReloading === false && player.userData.dead === false) {
+			spaceReleased = false;
+			player.userData.ammo -= 1;
+
+			const ammoBar = player.getObjectByName('ammoBar');
+			if (ammoBar) {
+				updateAmmoBar(ammoBar, player.userData.ammo, player.userData.maxAmmo, 0);
+			}
+
 			const geo = new THREE.SphereGeometry(0.17, 6, 6);
 			const mat = new THREE.MeshBasicMaterial({color: 0xffffff});
 			const bullet = new THREE.Mesh(geo, mat);
@@ -208,6 +232,7 @@ export function launchGame(container) {
 			bullet.position.copy(player.position);
 			bullet.position.y += 0.8;
 			bullet.userData.dir = bulldir;
+			bullet.userData.owner = myPlayerNumber;
 			scene.add(bullet);
 			bullets.push(bullet);
 
@@ -215,14 +240,21 @@ export function launchGame(container) {
 				x: bullet.position.x,
 				y: bullet.position.y,
 				z: bullet.position.z,
-				dir: bullet.userData.dir
+				dir: bullet.userData.dir,
+				owner: myPlayerNumber
 			});
 
-			canShoot = false;
-			setTimeout (() => { canShoot = true; }, cooldown);
+			if (player.userData.ammo <= 0) {
+				socket.emit('reload');
+				startReload(player);
+			}
 		}
 
 		if (lastPressed && player.userData.dead === false) {
+
+			const X = player.position.x;
+			const Z = player.position.z;
+
 			if (lastPressed === 'w') player.rotation.y = Math.PI;
 			if (lastPressed === 's') player.rotation.y = 0;
 			if (lastPressed === 'd') player.rotation.y = Math.PI / 2;
@@ -230,13 +262,10 @@ export function launchGame(container) {
 
 			let speed  = player.userData.speed * delta;
 
-			const X = player.position.x;
-			const Z = player.position.z
-		
-			if (lastPressed === 'w') player.position.z -= speed;
-			if (lastPressed === 's') player.position.z += speed;
 			if (lastPressed === 'a') player.position.x -= speed;
 			if (lastPressed === 'd') player.position.x += speed;
+			if (lastPressed === 'w') player.position.z -= speed;
+			if (lastPressed === 's') player.position.z += speed;
 
 			if (checkCollision(player)) {
 				player.position.x = X;
@@ -250,7 +279,7 @@ export function launchGame(container) {
 			});
 		}
 
-		let bSpeed = 25 * delta;
+		let bSpeed = 30 * delta;
 
 		for (let i = bullets.length - 1; i >= 0; --i) {
 			const bullet = bullets[i];
@@ -279,12 +308,15 @@ export function launchGame(container) {
 			}
 			for (let playerNumber in remotePlayers) {
 				const enemy = remotePlayers[playerNumber];
-				if (enemy.userData.dead === false && bulletBox.intersectsBox(new THREE.Box3().setFromObject(enemy))) {
+				const enemyBox = new THREE.Box3().setFromObject(enemy);
+				if (enemy.userData.dead === false
+					&& bulletBox.intersectsBox(enemyBox)) {
 					hit = true;
 					socket.emit('hitPlayer', {
-						playerNumber: playerNumber
+						playerNumber: playerNumber,
+						shooter: bullet.userData.owner
 					});
-					hitPlayer(playerNumber);
+					hitPlayer(playerNumber, bullet.userData.owner);
 					break ;
 				}
 			}
@@ -297,7 +329,6 @@ export function launchGame(container) {
 			}
 		}
 
-		updateHealthBar(player);
 		for (let key in remotePlayers) {
 			remotePlayers[key].userData.bullets.forEach(bullet => {
 				if (bullet.userData.dir === 'w') bullet.position.z -= bSpeed;
@@ -305,18 +336,9 @@ export function launchGame(container) {
 				if (bullet.userData.dir === 'a') bullet.position.x -= bSpeed;
 				if (bullet.userData.dir === 'd') bullet.position.x += bSpeed;
 			});
-			updateHealthBar(remotePlayers[key]);
 		}
 
 		renderer.render( scene, camera );
-	}
-
-	function updateHealthBar(player) {
-		const healthBar = player.getObjectByName('healthBar');
-
-		healthBar.lookAt(camera.position);
-		healthBar.rotation.y = 0;
-		healthBar.rotation.z = 0;
 	}
 
 	function setupSocketListener() {
@@ -332,33 +354,60 @@ export function launchGame(container) {
 				}
 			}
 
+			if (player) {
+				const myName = data.playerNames[data.myPlayerNumber - 1];
+				const nameLabel = createNameLabel(myName);
+				nameLabel.position.y = 3;
+				player.add(nameLabel);
+			}
+
+			for (let key in remotePlayers) {
+				const enemyName = data.playerNames[parseInt(key) - 1];
+				const nameLabel = createNameLabel(enemyName);
+				nameLabel.position.y = 3;
+				remotePlayers[key].add(nameLabel);
+			}
+
 			isGameRunning = true;
 			loaded = true;
+			callbacks.onGameStart();
+		});
+
+		socket.on('timeUpdate', (data) => {
+			callbacks.onTimeUpdate(data.seconds);
+		});
+
+		socket.on('gameOver', (data) => {
+			isGameRunning = false;
+			callbacks.onGameOver(data);
 		});
 
 		socket.on('waiting', (data) => {
 			console.log(`Waiting for players: ${data.current}/${data.required}`);
 		});
 
-	socket.on('playerMoved', (data) => {
-		const enemy = remotePlayers[data.playerNumber];
-		if (enemy) {
-			enemy.position.x = data.x;
-			enemy.position.z = data.z;
-			enemy.rotation.y = data.rotation;
-			if (enemy.userData.dead) {
-				enemy.userData.dead = false;
-				enemy.userData.health = enemy.userData.maxHealth;
-				const healthBar = enemy.getObjectByName('healthBar');
-				if (healthBar) {
-					healthBar.children.forEach(bar => {
-						bar.material.color.set(0xa4133c);
-						bar.material.needsUpdate = true;
-					});
+		socket.on('playerMoved', (data) => {
+			const enemy = remotePlayers[data.playerNumber];
+			if (enemy) {
+				enemy.position.x = data.x;
+				enemy.position.z = data.z;
+				enemy.rotation.y = data.rotation;
+				if (enemy.userData.dead) {
+					enemy.userData.dead = false;
+					enemy.userData.health = enemy.userData.maxHealth;
+					const healthBar = enemy.getObjectByName('healthBar');
+					if (healthBar) {
+						updateHealthBar(healthBar, enemy.userData.health,
+						enemy.userData.maxHealth);
+					}
+					enemy.userData.ammo = enemy.userData.maxAmmo;
+					const ammoBar = enemy.getObjectByName('ammoBar');
+					if (ammoBar) {
+						updateAmmoBar(ammoBar, enemy.userData.ammo, enemy.userData.maxAmmo, 0);
+					}
 				}
 			}
-		}
-	});
+		});
 
 		socket.on('blockHit', (data) => {
 			hitBlock(data.x, data.y);
@@ -371,9 +420,18 @@ export function launchGame(container) {
 
 			bullet.position.set(data.x, data.y, data.z);
 			bullet.userData.dir = data.dir;
+			bullet.userData.owner = data.owner;
 			scene.add(bullet);
-			if (remotePlayers[data.playerNumber]) {
-				remotePlayers[data.playerNumber].userData.bullets.push(bullet);
+
+			const enemy = remotePlayers[data.playerNumber];
+			if (enemy) {
+				enemy.userData.bullets.push(bullet);
+				enemy.userData.ammo -= 1;
+
+				const ammoBar = enemy.getObjectByName('ammoBar');
+				if (ammoBar) {
+					updateAmmoBar(ammoBar, enemy.userData.ammo, enemy.userData.maxAmmo, 0);
+				}
 			}
 		});
 
@@ -386,8 +444,20 @@ export function launchGame(container) {
 				remotePlayers[data.playerNumber].userData.bullets.splice(data.i, 1);
 			}
 		});
+
 		socket.on('playerShot', (data) => {
-			hitPlayer(data.playerNumber);
+			hitPlayer(data.playerNumber, data.shooter);
+		});
+
+		socket.on('leaderboardUpdate', (data) => {
+			callbacks.onLeaderboardUpdate(data);
+		});
+
+		socket.on('playerReloading', (data) => {
+			const enemy = remotePlayers[data.playerNumber];
+			if (enemy) {
+				startReload(enemy);
+			}
 		});
 	}
 
@@ -421,7 +491,7 @@ export function launchGame(container) {
 		}
 	}
 
-	function hitPlayer( playerNumber ) {
+	function hitPlayer( playerNumber, shooter ) {
 		let playerhit;
 		if (playerNumber == myPlayerNumber) playerhit = player;
 		else playerhit = remotePlayers[playerNumber];
@@ -430,13 +500,8 @@ export function launchGame(container) {
 			playerhit.userData.health -= 1;
 			const healthBar = playerhit.getObjectByName('healthBar');
 			if (healthBar) {
-				if (playerhit.userData.health >= 0 && playerhit.userData.health < playerhit.userData.maxHealth) {
-					const bar = healthBar.children[playerhit.userData.health];
-					if (bar) {
-						bar.material.color.set(0x1a1a1a);
-						bar.material.needsUpdate = true;
-					}
-				}
+				updateHealthBar(healthBar, playerhit.userData.health,
+				playerhit.userData.maxHealth);
 			}
 			playerhit.traverse((child) =>{
 				if (child.isMesh && child.name !== 'healthBarSegment') {
@@ -455,7 +520,10 @@ export function launchGame(container) {
 						if (playerhit.userData.health <= 0) {
 							playerhit.userData.dead = true;
 							playerhit.position.x = 200;
-							if (playerNumber == myPlayerNumber) respawn();
+							if (playerNumber == myPlayerNumber) {
+								socket.emit('playerDied', {number: shooter});
+								respawn();
+							}
 						}
 					}, 50);
 				}
@@ -496,10 +564,13 @@ export function launchGame(container) {
 		player.position.set(spawnX, -0.4, spawnZ);
 		const healthBar = player.getObjectByName('healthBar');
 		if (healthBar) {
-			healthBar.children.forEach(bar => {
-				bar.material.color.set(0xa4133c);
-				bar.material.needsUpdate = true;
-			});
+			updateHealthBar(healthBar, player.userData.health,
+			player.userData.maxHealth);
+		}
+		player.userData.ammo = player.userData.maxAmmo;
+		const ammoBar = player.getObjectByName('ammoBar');
+		if (ammoBar) {
+			updateAmmoBar(ammoBar, player.userData.ammo, player.userData.maxAmmo, 0);
 		}
 		socket.emit('move', {
 			x: player.position.x,
@@ -508,24 +579,196 @@ export function launchGame(container) {
 		});
 	}
 
-	function createHealthBar( maxHealth ) {
-		const group = new THREE.Group();
-		const width = 1;
-		group.name = 'healthBar';
+	function updateHealthBar( sprite, health, maxHealth ) {
+		const canvas = sprite.userData.canvas;
+		const ctx = sprite.userData.ctx;
+		const texture = sprite.userData.texture;
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+	
+		const padding = 4;
+		const gap = 2;
+		const totalGaps = maxHealth - 1;
+		const barWidth = (canvas.width - (padding * 2) - (gap * totalGaps)) / maxHealth;
+		const barHeight = canvas.height - (padding * 2);
+		const borderRadius = 8;
+
+		ctx.lineWidth = 4;
+		ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
 
 		for (let i = 0; i < maxHealth; ++i) {
-			const geometry = new THREE.BoxGeometry(width / maxHealth, 0.1, 0.05);
-			const material = new THREE.MeshBasicMaterial({ color: 0xa4133c });
-			const bar = new THREE.Mesh(geometry, material);
+			const x = padding + i * (barWidth + gap);
+			const y = padding;
 
-			bar.name = 'healthBarSegment';
+			ctx.beginPath();
+			ctx.roundRect(x, y, barWidth, barHeight, borderRadius);
 
-			bar.position.x = (-width / 2) + (i * (width / maxHealth)) + ((width / maxHealth) / 2);
+			if (i < health) {
+				ctx.fillStyle = '#780606';
+			} else {
+				ctx.fillStyle = '#1a1a1a';
+			}
+			ctx.fill();
 
-			group.add(bar);
+			ctx.stroke();
 		}
 
-		return ( group );
+		texture.needsUpdate = true;
+	}
+
+	function createHealthBar( maxHealth ) {
+		const canvas = document.createElement('canvas');
+		canvas.width = 128;
+		canvas.height = canvas.width / 5;
+		const ctx = canvas.getContext('2d');
+
+		const texture = new THREE.CanvasTexture(canvas);
+		const spriteMaterial = new THREE.SpriteMaterial({
+			map: texture,
+			depthTest: false,
+		});
+
+		const sprite = new THREE.Sprite(spriteMaterial);
+		sprite.name = 'healthBar';
+		sprite.scale.set(1.5, 0.1875, 1);
+		sprite.userData = { canvas, ctx, texture };
+
+		updateHealthBar(sprite, maxHealth, maxHealth);
+
+		return (sprite);
+	}
+
+	function startReload(player) {
+		if (player.userData.isReloading) return;
+
+		player.userData.isReloading = true;
+
+		const reloadTime = 3000;
+		const updateInterval = 50;
+		let elapsed = 0;
+
+		const reloadInterval = setInterval(() => {
+			if (player.userData.dead) {
+				clearInterval(reloadInterval);
+				player.userData.isReloading = false;
+				return ;
+			}
+
+			elapsed += updateInterval;
+			const progress = Math.min(elapsed / reloadTime, 1);
+
+			const ammoBar = player.getObjectByName('ammoBar');
+			if (ammoBar) {
+				updateAmmoBar(ammoBar, player.userData.ammo, player.userData.maxAmmo, progress);
+			}
+
+			if (elapsed >= reloadTime) {
+				clearInterval(reloadInterval);
+				player.userData.isReloading = false;
+				player.userData.ammo = player.userData.maxAmmo;
+				if (ammoBar) {
+					updateAmmoBar(ammoBar, player.userData.ammo, player.userData.maxAmmo, 0);
+				}
+			}
+		}, updateInterval);
+	}
+
+	function updateAmmoBar( sprite, ammo, maxAmmo, reloadProgress = 0 ) {
+		const canvas = sprite.userData.canvas;
+		const ctx = sprite.userData.ctx;
+		const texture = sprite.userData.texture;
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		const padding = 4;
+		const gap = 2;
+		const totalGaps = maxAmmo - 1;
+		const barWidth = (canvas.width - (padding * 2) - (gap * totalGaps)) / maxAmmo;
+		const barHeight = canvas.height - (padding * 2);
+		const borderRadius = 8;
+
+		ctx.lineWidth = 4;
+		ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+
+		for (let i = 0; i < maxAmmo; ++i) {
+			const x = padding + i * (barWidth + gap);
+			const y = padding;
+
+			ctx.beginPath();
+			ctx.roundRect(x, y, barWidth, barHeight, borderRadius);
+
+			if (i < ammo) {
+				ctx.fillStyle = '#efbf04';
+				ctx.fill();
+			} else {
+				ctx.fillStyle = '#1a1a1a';
+				ctx.fill();
+
+				if (reloadProgress > 0) {
+					ctx.save();
+					ctx.clip();
+					const fillHeight = barHeight * reloadProgress;
+					ctx.fillStyle = '#fafafa';
+					ctx.fillRect(x, y + barHeight - fillHeight, barWidth, fillHeight);
+					ctx.restore();
+				}
+			}
+
+			ctx.stroke();
+		}
+
+		texture.needsUpdate = true;
+	}
+
+	function createAmmoBar( maxAmmo ) {
+		const canvas = document.createElement('canvas');
+		canvas.width = 128;
+		canvas.height = canvas.width / 5;
+		const ctx = canvas.getContext('2d');
+
+		const texture = new THREE.CanvasTexture(canvas);
+		const spriteMaterial = new THREE.SpriteMaterial({
+			map: texture,
+			depthTest: false,
+		});
+
+		const sprite = new THREE.Sprite(spriteMaterial);
+		sprite.name = 'ammoBar';
+		sprite.scale.set(1.5, 0.1875, 1);
+		sprite.userData = { canvas, ctx, texture };
+
+		updateAmmoBar(sprite, maxAmmo, maxAmmo, 0);
+
+		return (sprite);
+	}
+
+	function createNameLabel( name ) {
+		const canvas = document.createElement('canvas');
+		const ctx = canvas.getContext('2d');
+
+		const textWidth = (name.length * 40) + 60;
+		canvas.width = Math.max(256, textWidth);
+		canvas.height = 128;
+
+		ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+		ctx.beginPath();
+		ctx.roundRect(0, 0, canvas.width, canvas.height, 8);
+		ctx.fill();
+		ctx.font = 'bold 64px Arial';
+		ctx.fillStyle = 'white';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+
+		const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+			map: new THREE.CanvasTexture(canvas),
+			depthTest: false,
+		}));
+
+		const ratio = canvas.width / canvas.height;
+		sprite.scale.set(1 * ratio * 0.5, 0.5, 1);
+
+		return (sprite);
 	}
 
 	function createBlock( type, x, y ) {
@@ -555,15 +798,22 @@ export function launchGame(container) {
 			});
 
 			const healthBar = createHealthBar(3);
-			healthBar.position.y = 1.5;
+			healthBar.position.y = 2;
 			tank.add(healthBar);
+
+			const ammoBar = createAmmoBar(5);
+			ammoBar.position.y = 1.6;
+			tank.add(ammoBar);
 
 			if (spawnSlot === myPlayerNumber) {
 				player = tank;
 				player.userData.dead = false;
-				player.userData.speed = 5;
+				player.userData.speed = 6;
 				player.userData.health = 3;
 				player.userData.maxHealth = 3;
+				player.userData.ammo = 5;
+				player.userData.maxAmmo = 5;
+				player.userData.isReloading = false;
 				scene.add(player);
 			}
 			else {
@@ -572,45 +822,60 @@ export function launchGame(container) {
 				remotePlayers[spawnSlot].userData.bullets = [];
 				remotePlayers[spawnSlot].userData.health = 3;
 				remotePlayers[spawnSlot].userData.maxHealth = 3;
+				remotePlayers[spawnSlot].userData.ammo = 5;
+				remotePlayers[spawnSlot].userData.maxAmmo = 5;
+				remotePlayers[spawnSlot].userData.isReloading = false;
 				scene.add(tank);
 			}
 		}
 
 		switch (type) {
-			case 11: clone = models.metal.clone(); break;
-			case 13: clone = models.brickB.clone(); break;
-			case 12: clone = models.stone.clone(); break;
-			case 4: clone = models.glass.clone(); break;
-			case 5: clone = models.brickA.clone(); break;
-			case 6: clone = models.wood.clone(); break;
-			case 14: clone = models.lava.clone(); break;
+			case 1: clone = models.metal.clone(); break;
+			case 2: clone = models.glass.clone(); break;
+			case 3: clone = models.water.clone(); break;
+			case 4: clone = models.blue.clone(); break;
+			case 5: clone = models.green.clone(); break;
+			case 6: clone = models.yellow.clone(); break;
+			case 7: clone = models.wood.clone(); break;
 			case 8: clone = models.dirt.clone(); break;
-			case 9: clone = models.tree.clone(); break;
-			case 10: clone = models.water.clone(); break;
-			case 1: clone = models.blue.clone(); break;
-			case 3: clone = models.red.clone(); break;
-			case 2: clone = models.green.clone(); break;
-			case 7: clone = models.yellow.clone(); break;
+			case 9: clone = models.bricks.clone(); break;
+			case 10: clone = models.lava.clone(); break;
 			default: clone = null;
 		}
 
 		if (clone) {
 			clone.position.set(realX, 0, realZ);
 			if (type === 2) {
-				clone.userData.maxHealth = 3;
-				clone.userData.health  = 3;
+				clone.userData.maxHealth = 2;
+				clone.userData.health  = 2;
 				clone.userData.isDestructible = true;
 			}
-			if (type === 10)
+			if (type === 7 || type === 8) {
+				clone.userData.maxHealth = 4;
+				clone.userData.health  = 4;
+				clone.userData.isDestructible = true;
+			}
+			if (type === 9) {
+				clone.userData.maxHealth = 5;
+				clone.userData.health  = 5;
+				clone.userData.isDestructible = true;
+			}
+			if (type === 3 || type === 10) {
 				clone.position.set(realX, -blockSize, realZ);
+			}
 			scene.add(clone);
 		}
 		blocks[y][x] = clone;
 	}
 
 	function checkCollision(player) {
-		const playerBox = new THREE.Box3().setFromObject(player);
-		playerBox.expandByScalar(-0.12);
+		const collisionSize = blockSize * 0.8;
+		const playerCenter =
+			new THREE.Vector3(player.position.x, -blockSize / 2, player.position.z);
+		const playerBox =
+			new THREE.Box3().setFromCenterAndSize(playerCenter,
+			new THREE.Vector3(collisionSize, collisionSize, collisionSize));
+
 		for (let row of blocks) {
 			for (let block of row) {
 				if (block) {
@@ -621,7 +886,12 @@ export function launchGame(container) {
 		}
 
 		for (let key in remotePlayers) {
-			const enemyBox = new THREE.Box3().setFromObject(remotePlayers[key]);
+			const enemy = remotePlayers[key];
+			const enemyCenter =
+				new THREE.Vector3(enemy.position.x, -blockSize / 2, enemy.position.z);
+			const enemyBox =
+				new THREE.Box3().setFromCenterAndSize(enemyCenter,
+				new THREE.Vector3(collisionSize, collisionSize, collisionSize));
 			if (playerBox.intersectsBox(enemyBox)) return true;
 		}
 		return false;

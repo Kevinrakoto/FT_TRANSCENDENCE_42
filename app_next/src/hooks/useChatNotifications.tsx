@@ -89,8 +89,19 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     console.log('[ChatNotifications] Setting up for user:', currentUserId)
     refreshFriendRequests()
     
-    const interval = setInterval(refreshFriendRequests, 30000)
-    return () => clearInterval(interval)
+    const interval = setInterval(refreshFriendRequests, 5000)
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshFriendRequests()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [isSessionLoaded, currentUserId, refreshFriendRequests])
 
   useEffect(() => {

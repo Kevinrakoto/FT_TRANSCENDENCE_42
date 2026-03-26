@@ -58,6 +58,27 @@ export async function POST(req: Request) {
           { status: 400 }
         )
       }
+      if (existing.status === "DECLINED") {
+        await prisma.friendship.update({
+          where: { id: existing.id },
+          data: { status: "PENDING" }
+        })
+        
+        const sender = await prisma.user.findUnique({
+          where: { id: senderId },
+          select: { username: true }
+        })
+    
+        await createNotification(
+          receiver.id,
+          "FRIEND_REQUEST",
+          "New Friend Request",
+          `${sender?.username || 'A user'} sent you a friend request`,
+          { senderId, friendshipId: existing.id }
+        )
+    
+        return NextResponse.json({ success: true, message: "Request resent" })
+      }
     }
 
     const friendship = await prisma.friendship.create({

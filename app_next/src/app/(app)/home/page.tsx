@@ -36,8 +36,8 @@ export default function HomePage() {
 
     return (
         <div className="game-container">
-
-            <div className="friends-button" title="friend list">
+            <div className='landing-background'></div>
+            <Link href='/friends' className="friends-button" title="friend list">
                 <svg 
                     className="friends-icon" 
                     viewBox="0 0 24 24" 
@@ -52,8 +52,7 @@ export default function HomePage() {
                         strokeLinejoin="round"
                     />
                 </svg>
-                <NavigationBadges />
-            </div>
+            </Link>
             <button 
                 onClick={handleLogout}
                 className="logout-button"

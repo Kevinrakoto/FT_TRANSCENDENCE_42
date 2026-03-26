@@ -11,7 +11,10 @@ export default function LandingPage() {
         
         <div className="card-illustration">
           <div className="card-title-wrapper">
-            <h1 className="vector-title">TANK BATTLE</h1>
+            <h1 className="game-title">
+              <span className='title-top'>TANK</span>
+              <span className='title-main'>BATTLE</span>  
+            </h1>
             <p className="vector-subtitle">Choose your destiny</p>
           </div>
         </div>
