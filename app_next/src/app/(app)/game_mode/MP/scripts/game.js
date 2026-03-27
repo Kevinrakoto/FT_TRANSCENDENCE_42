@@ -373,10 +373,6 @@ export function launchGame(container, callbacks, userData, gameMode) {
 			callbacks.onGameStart();
 		});
 
-		socket.on('timeUpdate', (data) => {
-			callbacks.onTimeUpdate(data.seconds);
-		});
-
 		socket.on('gameOver', (data) => {
 			isGameRunning = false;
 			callbacks.onGameOver(data);

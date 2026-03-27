@@ -11,15 +11,8 @@ export default function MultiplayerGamePage() {
 	const [error, setError] = useState<string | null>(null);
 	const [gameMode, setGameMode] = useState<number | null>(null);
 	const [isGameRunning, setIsGameRunning] = useState(false);
-	const [timeLeft, setTimeLeft] = useState<number | null>(null);
 	const [gameOverData, setGameOverData] = useState<any>(null);
 	const [leaderboard, setLeaderboard] = useState([]);
-
-	const formatTime = (seconds: number) => {
-		const minutes = Math.floor(seconds / 60);
-		const secs = seconds % 60;
-		return `${minutes}:${secs.toString().padStart(2, '0')}`;
-	};
 
 	const gameContainerRef = useRef(null);
 
@@ -44,7 +37,6 @@ export default function MultiplayerGamePage() {
 		}
 
 		const gameCallback = {
-			onTimeUpdate: (seconds: number) => setTimeLeft(seconds),
 			onGameStart: () => setIsGameRunning(true),
 			onGameOver: (data) => setGameOverData(data),
 			onLeaderboardUpdate: (data: any) => setLeaderboard(data)
@@ -122,15 +114,6 @@ export default function MultiplayerGamePage() {
 
 		{/* TIMER. TY MBA ATAOVY DESIGN MILAY BE RY ARUFA AH
 			MBOLA LE AKAMA NOVAOVAIKO TEO FOTSIN IO FA ZAH TS MAHAY */}
-
-		{timeLeft && (
-			<div className="absolute bottom-10 translate-x-1/2
-						bg-black/50 text-white font-mono text-4xl
-						font-bold px-10 py-6 rounded-lg z-50
-						border-gray-500 shadow-lg">
-				{formatTime(timeLeft)}
-			</div>
-		)}
 
 		{/*LE ZAVATRA MAMPISEO GAME OVER. ARUFA GAE */}
 		{/*LOADING ANMAMANARUFA*/}

@@ -1,6 +1,3 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
 const lobbies = {
 	2: [],
 	3: [],
@@ -126,6 +123,11 @@ module.exports = (io) => {
 						p.emit('leaderboardUpdate', leaderboard);
 					});
 
+					if (playerSocket.data.score >= 20) {
+						matchPlayers.forEach((playerSocket) => {
+							playerSocket.emit('gameOver', leaderboard);
+						});
+					}
 				});
 				playerSocket.on('reload', () => {
 					matchPlayers.forEach((other) => {
@@ -137,29 +139,7 @@ module.exports = (io) => {
 					});
 				});
 			});
-
-			let timer = 300;
-
-			const matchTimer = setInterval(() => {
-				--timer;
-				matchPlayers.forEach((playerSocket) => {
-					playerSocket.emit('timeUpdate', { seconds: timer });
-				});
-
-				if (timer <= 0) {
-					clearInterval(matchTimer);
-					const leaderboard = matchPlayers.map( p => ({
-						playerNumber: matchPlayers.indexOf(p) + 1,
-						username: p.data.username,
-						score: p.data.score
-					}));
-					matchPlayers.forEach((playerSocket) => {
-						playerSocket.emit('gameOver', leaderboard);
-					});
-				}
-			}, 1000);
-		}
-        else {
+		} else {
             socket.emit('waiting', {
 				current: lobbies[gameMode].length,
 				required: gameMode
