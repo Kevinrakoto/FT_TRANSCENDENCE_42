@@ -6,7 +6,7 @@
   right: 200px;
   width: 60px;
   height: 60px;
-  background: var(--menu-text);
+  background: transparent;
   backdrop-filter: blur(10px);
   border: 2px solid var(--red);
   border-radius: 10%;
@@ -173,11 +173,11 @@
   right: 120px;
   width: 60px;
   height: 60px;
-  background: var(--menu-text);
+  background: transparent;
   backdrop-filter: blur(10px);
-  border: 2px solid var(--neon-purple);
+  border: 2px solid var(--orange);
   border-radius: 10%;
-  color: var(--neon-purple);
+  color: var(--orange);
   cursor: pointer;
   text-decoration: none;
   transition: all 0.4s ease;
@@ -196,7 +196,7 @@
 
 .friends-button:active {
   transform: scale(0.95);
-  box-shadow: 0 0 10px var(--neon-blue);
+  box-shadow: 0 0 10px var(--orange);
 }
 
 .friends-icon {
@@ -206,9 +206,9 @@
 }
 
 .friends-button:hover {
-  background: var(--neon-blue);
+  background: var(--orange);
   color: var(--dark-bg);
-  box-shadow: 0 0 40px var(--neon-blue);
+  box-shadow: 0 0 40px var(--orange);
   transform: scale(1.1) rotate(5deg);
 }
 

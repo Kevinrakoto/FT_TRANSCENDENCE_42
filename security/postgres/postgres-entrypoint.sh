@@ -10,6 +10,7 @@ echo -e "${YELLOW}[POSTGRES] wait config Vault...${NC}"
 while [ ! -f /vault/config/internal.env ]; do
   sleep 2
 done
+sleep 1
 
 export $(grep -v '^#' /vault/config/internal.env | xargs)
 

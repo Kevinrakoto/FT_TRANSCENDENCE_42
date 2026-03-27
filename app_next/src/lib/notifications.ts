@@ -48,3 +48,19 @@ export async function createNotifications(
     return null;
   }
 }
+
+export async function emitFriendNotification(
+  targetUserId: number,
+  event: string,
+  data: Record<string, any>
+) {
+  try {
+    await fetch('https://localhost:3000/api/emit-friend-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUserId, event, data }),
+    });
+  } catch {
+    // Socket.IO emit is best-effort, user will get notification on next poll
+  }
+}

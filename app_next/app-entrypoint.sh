@@ -1,10 +1,13 @@
 #!/bin/sh
 set -e
 
-if [ -f /vault/config/internal.env ]; then
-    echo "Loading credentials from Vault..."
-    export $(grep -v '^#' /vault/config/internal.env | xargs)
-fi
+echo "Waiting for Vault credentials..."
+while [ ! -f /vault/config/internal.env ]; do
+  sleep 2
+done
+sleep 1
+echo "Loading credentials from Vault..."
+export $(grep -v '^#' /vault/config/internal.env | xargs)
 
 npx prisma generate
 

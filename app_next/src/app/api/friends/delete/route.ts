@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { createNotification, emitFriendNotification } from "@/lib/notifications"
 
 export async function DELETE(req: Request) {
   try {
@@ -25,11 +26,13 @@ export async function DELETE(req: Request) {
       )
     }
 
+    const friendIdInt = parseInt(friendId)
+
     const friendship = await prisma.friendship.findFirst({
       where: {
         OR: [
-          { senderId: userId, receiverId: parseInt(friendId) },
-          { receiverId: userId, senderId: parseInt(friendId) }
+          { senderId: userId, receiverId: friendIdInt },
+          { receiverId: userId, senderId: friendIdInt }
         ],
         status: "ACCEPTED"
       }
@@ -42,8 +45,54 @@ export async function DELETE(req: Request) {
       )
     }
 
-    await prisma.friendship.delete({
-      where: { id: friendship.id }
+    await prisma.$transaction(async (tx) => {
+      await tx.friendship.delete({
+        where: { id: friendship.id }
+      })
+
+      const conversation = await tx.conversation.findFirst({
+        where: {
+          OR: [
+            { user1Id: userId, user2Id: friendIdInt },
+            { user1Id: friendIdInt, user2Id: userId }
+          ]
+        }
+      })
+
+      if (conversation) {
+        await tx.messageRead.deleteMany({
+          where: {
+            message: { conversationId: conversation.id }
+          }
+        })
+
+        await tx.message.deleteMany({
+          where: { conversationId: conversation.id }
+        })
+
+        await tx.conversationParticipant.deleteMany({
+          where: { conversationId: conversation.id }
+        })
+
+        await tx.conversation.delete({
+          where: { id: conversation.id }
+        })
+      }
+    })
+
+    const removedFriendId = friendship.senderId === userId ? friendship.receiverId : friendship.senderId
+
+    await createNotification(
+      removedFriendId,
+      "FRIEND_REMOVED",
+      "Friend Removed",
+      "A user removed you from their friends list",
+      { userId }
+    )
+
+    await emitFriendNotification(removedFriendId, 'friend-notification', {
+      type: 'friend_removed',
+      fromUserId: userId,
     })
 
     return NextResponse.json({ success: true })

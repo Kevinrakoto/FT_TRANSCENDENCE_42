@@ -31,6 +31,17 @@ export const authOptions: NextAuthOptions = {
            throw new Error("Incorrect password")
         }
 
+        if (user.isOnline) {
+          const STALE_THRESHOLD_MS = 5 * 60 * 1000
+          const isStale = user.lastSeen
+            ? (Date.now() - new Date(user.lastSeen).getTime()) > STALE_THRESHOLD_MS
+            : false
+
+          if (!isStale) {
+            throw new Error("This account is already logged in from another session")
+          }
+        }
+
       await prisma.user.update({
         where: { id: user.id },
         data: { isOnline: true, lastSeen: new Date() }

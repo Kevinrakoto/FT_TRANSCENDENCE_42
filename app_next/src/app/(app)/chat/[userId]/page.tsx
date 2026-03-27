@@ -1,10 +1,16 @@
 // src/app/chat/[userId]/page.tsx
+import type { Metadata } from 'next'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import PrivateChat from '@/components/PrivateChat'
 import PageLayout from '@/components/PageLayout'
+
+export const metadata: Metadata = {
+  title: 'Chat',
+  description: 'Private chat conversation in Tank Battle.',
+}
 
 interface Props {
   params: {
