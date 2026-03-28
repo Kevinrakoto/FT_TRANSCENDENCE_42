@@ -196,6 +196,7 @@ export default function FriendsClient() {
       setProcessingId(null)
     }
   }
+
   return (
     <PageLayout title="Friends" backUrl="/home">
       {/* Toast notification */}
@@ -203,7 +204,7 @@ export default function FriendsClient() {
         <div className="friend-toast" onClick={dismissToast}>
           <div className="friend-toast-content">
             <span className="friend-toast-icon">
-             {toast.type === 'friend_request' && '👤'}
+              {toast.type === 'friend_request' && '👤'}
               {toast.type === 'friend_accepted' && '✅'}
               {toast.type === 'friend_denied' && '❌'}
               {toast.type === 'friend_removed' && '🚫'}
@@ -320,14 +321,14 @@ export default function FriendsClient() {
                       className="remove-button"
                       title="Remove friend"
                     >
-                      {removingId === friend.id ? '...' : '\u2715'}
+                      {removingId === friend.id ? '...' : '❌'}
                     </button>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="empty-state">
-                <p className="empty-icon">{"\u{1F465}"}</p>
+                <p className="empty-icon">👥</p>
                 <p>No friends yet</p>
                 <p className="text-sm text-gray-400 mt-2">Search for players above to add them!</p>
               </div>
@@ -378,7 +379,7 @@ export default function FriendsClient() {
               </div>
             ) : (
               <div className="empty-state">
-                <p className="empty-icon">{"\u{1F4E8}"}</p>
+                <p className="empty-icon">📩</p>
                 <p>No pending requests</p>
                 <p className="text-sm text-gray-400 mt-2">When someone sends you a friend request, it will appear here.</p>
               </div>
@@ -387,8 +388,390 @@ export default function FriendsClient() {
         )}
       </div>
 
+      <style jsx>{`
+        .friends-container {
+          width: 100%;
+        }
+
+        /* Toast */
+        .friend-toast {
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 9999;
+          animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+          from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+          to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        .friend-toast-content {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: rgba(20, 20, 35, 0.95);
+          border: 1px solid rgba(59, 130, 246, 0.5);
+          border-radius: 12px;
+          padding: 12px 20px;
+          min-width: 320px;
+          max-width: 450px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(10px);
+          cursor: pointer;
+        }
+
+        .friend-toast-icon {
+          font-size: 24px;
+          flex-shrink: 0;
+        }
+
+        .friend-toast-title {
+          color: white;
+          font-weight: 600;
+          font-size: 14px;
+        }
+
+        .friend-toast-message {
+          color: #9ca3af;
+          font-size: 12px;
+          margin-top: 2px;
+        }
+
+        .friend-toast-close {
+          color: #6b7280;
+          background: none;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+          padding: 0 4px;
+          flex-shrink: 0;
+        }
+
+        .friend-toast-close:hover {
+          color: white;
+        }
+
+        /* Add friend */
+        .add-friend-section {
+          background: rgba(30, 30, 40, 0.8);
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+          color: #8b8b8b;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 2px;
+          margin-bottom: 12px;
+        }
+
+        .add-friend-row {
+          display: flex;
+          gap: 8px;
+        }
+
+        .add-friend-input {
+          flex: 1;
+          padding: 10px 14px;
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          color: white;
+          font-size: 14px;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+
+        .add-friend-input:focus {
+          border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .add-friend-input::placeholder {
+          color: #6b7280;
+        }
+
+        /* Tabs */
+        .friends-tabs {
+          display: flex;
+          gap: 4px;
+          margin-bottom: 16px;
+          background: rgba(30, 30, 40, 0.8);
+          border-radius: 10px;
+          padding: 4px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .friends-tab {
+          flex: 1;
+          padding: 10px;
+          background: transparent;
+          border: none;
+          border-radius: 8px;
+          color: #8b8b8b;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .friends-tab.active {
+          background: rgba(59, 130, 246, 0.2);
+          color: white;
+        }
+
+        .friends-tab:hover:not(.active) {
+          color: #d1d5db;
+        }
+
+        .tab-badge {
+          background: #ef4444;
+          color: white;
+          font-size: 11px;
+          font-weight: bold;
+          min-width: 20px;
+          height: 20px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 6px;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+
+        /* Lists */
+        .friends-list-section {
+          background: rgba(30, 30, 40, 0.8);
+          border-radius: 12px;
+          padding: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .friends-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 12px;
+        }
+
+        .requests-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .friend-card, .request-card {
+          background: rgba(20, 20, 30, 0.9);
+          border-radius: 12px;
+          padding: 14px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          transition: all 0.2s ease;
+        }
+
+        .friend-card:hover, .request-card:hover {
+          border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .friend-avatar-container {
+          position: relative;
+          flex-shrink: 0;
+        }
+
+        .friend-avatar {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .friend-avatar-placeholder {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 16px;
+        }
+
+        .online-indicator {
+          position: absolute;
+          bottom: 1px;
+          right: 1px;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          border: 2px solid #1a1a24;
+        }
+
+        .online-indicator.online { background: #10b981; }
+        .online-indicator.offline { background: #4b5563; }
+
+        .friend-info {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .friend-name {
+          color: white;
+          font-weight: 600;
+          font-size: 14px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          text-decoration: none;
+          display: block;
+        }
+
+        .friend-name:hover { color: #60a5fa; }
+
+        .friend-status {
+          font-size: 12px;
+          margin-top: 2px;
+        }
+
+        .status-online { color: #10b981; }
+        .status-offline { color: #6b7280; }
+
+        .chat-button {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          color: white;
+          padding: 8px 14px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .chat-button:hover {
+          transform: scale(1.05);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .profile-link-button {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(59, 130, 246, 0.2);
+          border: 1px solid rgba(59, 130, 246, 0.5);
+          color: #3b82f6;
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          flex-shrink: 0;
+          transition: all 0.2s ease;
+          text-decoration: none;
+        }
+
+        .profile-link-button:hover {
+          background: #3b82f6;
+          color: white;
+        }
+
+        .remove-button {
+          background: rgba(239, 68, 68, 0.2);
+          border: 1px solid rgba(239, 68, 68, 0.5);
+          color: #ef4444;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .remove-button:hover {
+          background: #ef4444;
+          color: white;
+        }
+
+        .remove-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        /* Request actions */
+        .request-actions {
+          display: flex;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+
+        .deny-button {
+          background: rgba(239, 68, 68, 0.2);
+          border: 1px solid rgba(239, 68, 68, 0.5);
+          color: #ef4444;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .deny-button:hover {
+          background: #ef4444;
+          color: white;
+        }
+
+        .accept-button {
+          background: rgba(16, 185, 129, 0.2);
+          border: 1px solid rgba(16, 185, 129, 0.5);
+          color: #10b981;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .accept-button:hover {
+          background: #10b981;
+          color: white;
+        }
+
+        .deny-button:disabled, .accept-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 40px 20px;
+          color: #6b7280;
+        }
+
+        .empty-icon {
+          font-size: 48px;
+          margin-bottom: 12px;
+        }
+      `}</style>
     </PageLayout>
-  );
+  )
 }
 
 function formatDate(date: Date): string {
