@@ -49,6 +49,9 @@ function initializeSocket(): Socket {
   socketInstance.on('dbl_connex', (data) => {
     console.warn('[SOCKET] Double connection detected:', data.message);
     currentSocketUserId = null;
+    import('next-auth/react').then(({ signOut }) => {
+      signOut({ callbackUrl: '/signin?error=already_connected' });
+    });
   });
 
   isSocketInitialized = true;

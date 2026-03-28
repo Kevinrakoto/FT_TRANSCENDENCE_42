@@ -1,22 +1,41 @@
 # app_next/docker-compose.yml
 services:
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+  vault:
+    build: ./security/vault
+    container_name: vault
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - transcendence_net
+    volumes:
+      - vault_secrets:/vault/config
+      - vault_data:/vault/data
+      - ssl_certs:/vault/certs
+
+  nginx:
+    build: ./security/nginx
+    container_name: nginx
     ports:
-      - "5432:5432"
+      - "8443:443"
+    depends_on:
+      - vault
+      - app
+    networks:
+      - transcendence_net
+    volumes:
+      - vault_secrets:/vault/config
+      - ./security/nginx/conf:/etc/nginx/conf.d
+      - ssl_certs:/etc/nginx/ssl:ro
+  
+  postgres:
+    build: ./security/postgres
+    networks:
+      - transcendence_net
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis_data:/data
+      - vault_secrets:/vault/config:ro
+    depends_on:
+      - vault
 
   app:
     build:
@@ -24,20 +43,23 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
-      - "5555:5555"
+    networks:
+      - transcendence_net
     volumes:
       - ./app_next:/app
       - /app/node_modules
-    environment:
-      DATABASE_URL: postgresql://${DB_USER:-transcendence}:${DB_PASSWORD:-transcendence123}@postgres:5432/${DB_NAME:-transcendence}
-      REDIS_URL: redis://redis:6379
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXTAUTH_URL: ${NEXTAUTH_URL}
-
+      - vault_secrets:/vault/config:ro
+      - ssl_certs:/app/certificates:ro
     depends_on:
       - postgres
-      - redis
+      - vault
+
+networks:
+  transcendence_net:
+    driver: bridge
 
 volumes:
+  vault_secrets:
+  vault_data:
   postgres_data:
-  redis_data:
+  ssl_certs:

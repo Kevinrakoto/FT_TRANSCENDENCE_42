@@ -12,6 +12,7 @@
 @import "./styles/components/decorations.css";
 @import "./styles/responsive.css";
 @import "./styles/components/mode_selection.css";
+@import "./styles/components/dashboard.css";
 
 * {
   margin: 0;

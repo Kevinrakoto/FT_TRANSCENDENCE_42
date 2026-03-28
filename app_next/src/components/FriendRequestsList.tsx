@@ -31,6 +31,18 @@ export default function FriendRequestsList() {
     }
   }
 
+  const denyRequest = async (friendshipId: number) => {
+    const res = await fetch('/api/friends/deny', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendshipId })
+    })
+
+    if (res.ok) {
+      fetchRequests()
+    }
+  }
+
   if (loading) return <div>Loading...</div>
 
   if (requests.length === 0) {
@@ -46,12 +58,20 @@ export default function FriendRequestsList() {
             <p className="font-semibold">{request.sender.tankName || request.sender.username}</p>
             <p className="text-sm text-gray-500">@{request.sender.username}</p>
           </div>
-          <button
-            onClick={() => acceptRequest(request.id)}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
-            Accept
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => denyRequest(request.id)}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            >
+              Deny
+            </button>
+            <button
+              onClick={() => acceptRequest(request.id)}
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            >
+              Accept
+            </button>
+          </div>
         </div>
       ))}
     </div>
