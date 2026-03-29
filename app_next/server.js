@@ -21,16 +21,11 @@ const httpsOptions = {
 const onlinePlayers = new Map();
 
 function logOnlinePlayers(context) {
-  console.log(`\n=== 👥 Joueurs connectés [${context}] ===`);
   if (onlinePlayers.size === 0) {
-    console.log('Aucun joueur connecté');
   } else {
-    console.log(`Total: ${onlinePlayers.size} joueur(s)`);
     onlinePlayers.forEach((player, userId) => {
-      console.log(`  • ID: (${userId}) - Socket: ${player.socketId} - Tank: ${player.tankName || 'Aucun'}`);
     });
   }
-  console.log('=====================================\n');
 }
 
 app.prepare().then(() => {
@@ -58,52 +53,88 @@ app.prepare().then(() => {
       return;
     }
 
+    // Internal endpoint to force-disconnect an old session
+    if (req.method === 'POST' && req.url === '/api/force-logout') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const { userId } = JSON.parse(body);
+          if (userId) {
+            const existingPlayer = onlinePlayers.get(String(userId));
+            if (existingPlayer) {
+              // Find the socket and force disconnect it
+              const oldSocket = io.sockets.sockets.get(existingPlayer.socketId);
+              if (oldSocket) {
+                oldSocket.emit('force-logout', { reason: 'Another session opened for this account' });
+                oldSocket.disconnect(true);
+              }
+              onlinePlayers.delete(String(userId));
+              io.emit('online-players-update', Array.from(onlinePlayers.values()));
+              io.emit('user-left', { userId: Number(userId) });
+            }
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (e) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed' }));
+        }
+      });
+      return;
+    }
+
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
   });
 
   const io = new Server(server, {
     cors: {
-      origin: '*', // À sécuriser en prod (ex: domaine + localhost)
+      origin: '*',
       methods: ['GET', 'POST'],
     },
   });
 
+  // Expose io to API routes via global
+  global.__socketIO = io;
+  global.__onlinePlayers = onlinePlayers;
+
   io.on('connection', (socket) => {
-    
-    // --------------------------------------------------------------------
-    // GESTION DES JOUEURS CONNECTÉS (pour la liste online + demandes d'ami)
-    // --------------------------------------------------------------------
     
     socket.on('join-game', (userData) => {
   if (!userData || !userData.userId) {
-    console.warn('Tentative de join-game sans userId/username', userData.userId);
     return;
   }
-  
-  console.log('Nouvelles connexion Socket.IO →', socket.id);
   
   const existingPlayer = onlinePlayers.get(userData.userId);
   
   if (existingPlayer) {
     if (existingPlayer.socketId === socket.id) {
-      console.log(`🔄 Reconnexion du même socket pour ${userData.userId}`);
+      // Same socket reconnecting (e.g. page refresh)
       onlinePlayers.set(userData.userId, {
         ...existingPlayer,
         ...userData,
         socketId: socket.id
       });
     } else {
-      console.log(`⚠️  Conflit: ${userData.userId} déjà connecté avec un autre socket`);
-      socket.emit('dbl_connex', { message: 'This account is already logged in from another session.' });
-      socket.disconnect(true);
-      return;
+      // Different socket = new session for same user
+      // Disconnect the OLD socket, accept the NEW one
+      const oldSocket = io.sockets.sockets.get(existingPlayer.socketId);
+      if (oldSocket) {
+        oldSocket.emit('force-logout', { reason: 'Another session opened for this account' });
+        oldSocket.disconnect(true);
+      }
+      // Now register the new socket
+      onlinePlayers.set(userData.userId, {
+        userId: userData.userId,
+        username: userData.username,
+        socketId: socket.id,
+      });
     }
   } else {
     onlinePlayers.set(userData.userId, {
       userId: userData.userId,
       username: userData.username,
-      tankName: userData.tankName || null,
       socketId: socket.id,
     });
   }
@@ -113,28 +144,22 @@ app.prepare().then(() => {
     data: { isOnline: true }
   }).catch(err => console.error('Error updating online status:', err));
 
-  console.log(`Joueur connecté: ${userData.userId} (${userData.userId})`);
   io.emit('online-players-update', Array.from(onlinePlayers.values()));
   io.emit('user-joined', { userId: Number(userData.userId) });
 });
-
-    // --------------------------------------------------------------------
-    // DEMANDER LA LISTE DES JOUEURS EN LIGNE
-    // --------------------------------------------------------------------
-    
+ 
     socket.on('request-online-players', () => {
       socket.emit('online-players-update', Array.from(onlinePlayers.values()));
     });
 
     // --------------------------------------------------------------------
-    // CHAT PRIVÉ
+    // PRIVATE chAT
     // --------------------------------------------------------------------
     
     socket.on('join-private-room', async (data) => {
     if (!data?.conversationId || !data?.userId) return;
 
     socket.join(String(data.conversationId));
-    console.log(`Socket ${socket.id} a rejoint la room ${data.conversationId}`);
     
     socket.emit('online-players-update', Array.from(onlinePlayers.values()));
     
@@ -160,11 +185,6 @@ app.prepare().then(() => {
       socket.emit('user-joined', { userId: otherUserId })
     }
 });
-
-    // --------------------------------------------------------------------
-    // ENVOI DE MESSAGE PRIVÉ
-    // --------------------------------------------------------------------
-    
     socket.on('private-message', async (data) => {
       if (!data?.conversationId || !data?.content || !data?.userId) return;
       
@@ -177,7 +197,7 @@ app.prepare().then(() => {
           },
           include: {
             user: {
-              select: { id: true, username: true, tankName: true }
+              select: { id: true, username: true }
             }
           }
         });
@@ -187,21 +207,10 @@ app.prepare().then(() => {
         console.error('Error sending message:', error);
       }
     });
-
-    // --------------------------------------------------------------------
-    // QUITTER UNE ROOM PRIVÉE
-    // --------------------------------------------------------------------
-    
     socket.on('leave-private-room', (data) => {
       if (!data?.conversationId) return;
       socket.leave(String(data.conversationId));
-      console.log(`Socket ${socket.id} left room ${data.conversationId}`);
     });
-
-    // --------------------------------------------------------------------
-    // INDICATEUR DE FRAPE
-    // --------------------------------------------------------------------
-    
     socket.on('typing', (data) => {
       if (!data?.conversationId) return;
       socket.to(String(data.conversationId)).emit('user-typing', {
@@ -209,11 +218,6 @@ app.prepare().then(() => {
         isTyping: data.isTyping
       });
     });
-
-    // --------------------------------------------------------------------
-    // MISE À JOUR PROFIL/AVATAR EN TEMPS RÉEL
-    // --------------------------------------------------------------------
-    
     socket.on('profile-update', async (data) => {
       if (!data?.userId || !data?.updates) return;
       
@@ -231,27 +235,23 @@ app.prepare().then(() => {
         console.error('Error updating profile:', error);
       }
     });
-
-    // --------------------------------------------------------------------
-    // MARQUER LES MESSAGES COMME LU
-    // --------------------------------------------------------------------
-    
     socket.on('mark-messages-read', async (data) => {
       if (!data?.conversationId || !data?.messageIds || !data?.userId) return;
       
       try {
+        const userIdInt = parseInt(data.userId);
         for (const messageId of data.messageIds) {
           await prisma.messageRead.upsert({
             where: {
               messageId_userId: {
                 messageId: parseInt(messageId),
-                userId: data.userId
+                userId: userIdInt
               }
             },
             update: { readAt: new Date() },
             create: {
               messageId: parseInt(messageId),
-              userId: data.userId
+              userId: userIdInt
             }
           });
         }
@@ -263,10 +263,6 @@ app.prepare().then(() => {
         console.error('Error marking messages as read:', error);
       }
     });
-
-    // --------------------------------------------------------------------
-    // DÉCONNEXION → nettoyage
-    // --------------------------------------------------------------------
     socket.on('player-disconnect', async (data) => {
       if (data?.userId) {
         onlinePlayers.delete(data.userId)
@@ -278,12 +274,10 @@ app.prepare().then(() => {
           data: { isOnline: false, lastSeen: new Date() }
         }).catch(err => console.error('Error updating offline status:', err));
         
-        console.log(`Joueur déconnecté manuellement: ${data.userId}`)
       }
     })
 
     socket.on('disconnect', async () => {
-        console.log('Client déconnecté →', socket.id);
 
         let disconnectedUserId = null;
 
@@ -296,7 +290,6 @@ app.prepare().then(() => {
         }
 
         if (disconnectedUserId) {
-          console.log(`Joueur déconnecté: ${disconnectedUserId}`);
           io.emit('online-players-update', Array.from(onlinePlayers.values()));
           io.emit('user-left', { userId: Number(disconnectedUserId) });
           
@@ -315,9 +308,9 @@ app.prepare().then(() => {
   // --------------------------------------------------------------------------
   server.listen(3000, (error) => {
   if (error) {
-    console.error('Erreur démarrage serveur:', error);
+    console.error('Server startup error:', error);
   } else {
-    console.log('> Server ready on https://localhost:3000');
+    console.log('Server ready on https://localhost:8443')
   }
   });
 

@@ -10,7 +10,6 @@ export interface ChatNotification {
   type: 'message' | 'friend_request' | 'friend_accepted' | 'friend_denied' | 'friend_removed'
   fromUserId: number
   fromUsername: string
-  fromTankName?: string
   conversationId?: number
   friendshipId?: number
   message?: string
@@ -85,7 +84,6 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
               type: 'friend_request',
               fromUserId: req.sender.id,
               fromUsername: req.sender.username,
-              fromTankName: req.sender.tankName,
               friendshipId: req.id,
               timestamp: new Date(req.createdAt),
               read: false,
@@ -120,11 +118,10 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
 
   // Real-time friend notification listener
   useEffect(() => {
-    if (!currentUserIdRef.current) return
+    if (!currentUserId) return
 
     function onFriendNotification(data: any) {
-      const userId = currentUserIdRef.current
-      if (!userId) return
+      if (!currentUserIdRef.current) return
 
       if (data.type === 'friend_request') {
         const notification: ChatNotification = {
@@ -185,10 +182,10 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     return () => {
       chatSocket.off('friend-notification', onFriendNotification)
     }
-  }, [])
+  }, [currentUserId, showToast, refreshFriendRequests])
 
   useEffect(() => {
-    if (!currentUserIdRef.current) return
+    if (!currentUserId) return
 
     function onNewMessage(data: any) {
       const userId = currentUserIdRef.current
@@ -199,7 +196,6 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
         type: 'message',
         fromUserId: data.userId,
         fromUsername: data.user?.username || 'Unknown',
-        fromTankName: data.user?.tankName,
         conversationId: data.conversationId,
         message: data.content,
         timestamp: new Date(),
@@ -207,6 +203,7 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
       }
 
       setNotifications(prev => [notification, ...prev].slice(0, 50))
+      showToast(notification)
     }
 
     chatSocket.on('new-message', onNewMessage)
@@ -214,7 +211,7 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     return () => {
       chatSocket.off('new-message', onNewMessage)
     }
-  }, [])
+  }, [currentUserId, showToast])
 
   const addNotification = useCallback((notification: Omit<ChatNotification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: ChatNotification = {
@@ -226,22 +223,64 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     setNotifications(prev => [newNotification, ...prev].slice(0, 50))
   }, [])
 
-  const markAsRead = useCallback((id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     setNotifications(prev => 
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     )
+    const numericId = id.replace(/^[a-z]+-/, '').split('-')[0]
+    if (!isNaN(Number(numericId))) {
+      try {
+        await fetch('/api/me/notifications', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationIds: [Number(numericId)] }),
+        })
+      } catch (error) {
+        console.error('[ChatNotifications] Error marking as read:', error)
+      }
+    }
   }, [])
 
-  const markAllAsRead = useCallback(() => {
+  const markAllAsRead = useCallback(async () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    try {
+      await fetch('/api/me/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAllRead: true }),
+      })
+    } catch (error) {
+      console.error('[ChatNotifications] Error marking all as read:', error)
+    }
   }, [])
 
-  const removeNotification = useCallback((id: string) => {
+  const removeNotification = useCallback(async (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id))
+    const numericId = id.replace(/^[a-z]+-/, '').split('-')[0]
+    if (!isNaN(Number(numericId))) {
+      try {
+        await fetch('/api/me/notifications', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationId: Number(numericId) }),
+        })
+      } catch (error) {
+        console.error('[ChatNotifications] Error deleting notification:', error)
+      }
+    }
   }, [])
 
-  const clearAll = useCallback(() => {
+  const clearAll = useCallback(async () => {
     setNotifications([])
+    try {
+      await fetch('/api/me/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clearAll: true }),
+      })
+    } catch (error) {
+      console.error('[ChatNotifications] Error clearing all notifications:', error)
+    }
   }, [])
 
   const unreadMessagesCount = notifications.filter(n => !n.read && n.type === 'message').length

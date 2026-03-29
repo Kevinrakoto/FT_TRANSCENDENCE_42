@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useEffect } from 'react';
-import { chatSocket } from '@/lib/socket-client';
 import { NavigationBadges } from '@/components/NavigationBadges';
 
 export default function HomeClient() {
@@ -19,15 +18,16 @@ export default function HomeClient() {
     }, [session, status, router]);
 
     const handleLogout = async () => {
-        if (session?.user) {
-            chatSocket.disconnect();
-        }
         await signOut({ redirect: false });
         window.location.href = '/signin';
     };
 
     if (status === 'loading') {
-        return <div>Loading...</div>;
+        return (
+            <div className="game-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="loading-text">LOADING...</div>
+            </div>
+        );
     }
 
     if (!session) {
@@ -95,10 +95,6 @@ export default function HomeClient() {
 
                 <Link href="/leaderboard" className="menu-item">
                     <span className="menu-text">Leaderboard</span>
-                </Link>
-
-                <Link href="/friends/requests" className="menu-item menu">
-                    <span className="menu-text">Request</span>
                 </Link>
             </nav>
             <div className="tank-decoration">

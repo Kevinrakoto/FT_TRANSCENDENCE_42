@@ -102,7 +102,7 @@ if ! vault kv get secret/transcendence > /dev/null 2>&1; then
         DB_USER="transcendence" \
         DB_PASSWORD="$RAND_PASS" \
         DB_NAME="db_transcendence" \
-        NEXTAUTH_URL="https://localhost:4343" \
+        NEXTAUTH_URL="https://localhost:8443" \
         NEXTAUTH_SECRET="$RAND_NEXT_SEC"
     
     echo -e "${GREEN}✅ Secrets generated and stored in the vault.${NC}"

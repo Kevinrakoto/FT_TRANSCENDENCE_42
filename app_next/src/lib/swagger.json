@@ -10,7 +10,7 @@
   },
   "servers": [
     {
-      "url": "https://localhost:3000",
+      "url": "https://localhost:8443",
       "description": "Local development server"
     }
   ],
@@ -49,7 +49,6 @@
         "properties": {
           "id": { "type": "integer", "example": 1 },
           "username": { "type": "string", "example": "TankMaster" },
-          "tankName": { "type": "string", "example": "Panzer IV" },
           "tankLevel": { "type": "integer", "example": 12 },
           "xp": { "type": "integer", "example": 5400 },
           "wins": { "type": "integer", "example": 42 },
@@ -63,7 +62,6 @@
           "id": { "type": "integer", "example": 1 },
           "username": { "type": "string", "example": "TankMaster" },
           "email": { "type": "string", "format": "email", "example": "tank@battle.com" },
-          "tankName": { "type": "string", "example": "Panzer IV" },
           "tankColor": { "type": "string", "example": "#ff0000" },
           "tankLevel": { "type": "integer", "example": 12 },
           "xp": { "type": "integer", "example": 5400 },
@@ -83,7 +81,6 @@
         "properties": {
           "id": { "type": "integer", "example": 1 },
           "username": { "type": "string", "example": "TankMaster" },
-          "tankName": { "type": "string", "example": "Panzer IV" },
           "tankLevel": { "type": "integer", "example": 12 },
           "xp": { "type": "integer", "example": 5400 },
           "wins": { "type": "integer", "example": 42 },
@@ -121,7 +118,6 @@
         "properties": {
           "id": { "type": "integer", "example": 2 },
           "username": { "type": "string", "example": "TankPro" },
-          "tankName": { "type": "string", "example": "Tiger I" },
           "tankLevel": { "type": "integer", "example": 8 },
           "wins": { "type": "integer", "example": 25 },
           "isOnline": { "type": "boolean", "example": true },
@@ -142,7 +138,6 @@
       "ProfileUpdateBody": {
         "type": "object",
         "properties": {
-          "tankName": { "type": "string", "example": "Panzer V", "description": "New tank name" },
           "tankColor": { "type": "string", "example": "#00ff00", "description": "Hex color code" }
         }
       },

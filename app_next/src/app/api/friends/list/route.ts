@@ -30,7 +30,6 @@ export async function GET() {
             id: true,
             username: true,
             avatar: true,
-            tankName: true,
             tankColor: true,
             isOnline: true,
             lastSeen: true
@@ -41,7 +40,6 @@ export async function GET() {
             id: true,
             username: true,
             avatar: true,
-            tankName: true,
             tankColor: true,
             isOnline: true,
             lastSeen: true
@@ -50,12 +48,12 @@ export async function GET() {
       }
     })
 
-    // Transformer pour retourner seulement l'ami
+    // Return only the friend
     const friends = friendships.map(f => 
       f.senderId === userId ? f.receiver : f.sender
     )
 
-    // Pour chaque ami, trouver la conversation associée
+    // For each friend, find the associated conversation
     const friendsWithConversations = await Promise.all(
       friends.map(async (friend) => {
         const conversation = await prisma.conversation.findFirst({

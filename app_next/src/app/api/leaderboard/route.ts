@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req : Request) {
   try
   {
     const {searchParams} = new URL(req.url)
     const sortBy = searchParams.get('sortBy') || 'wins';
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100);
 
     const validSortFields = ['wins', 'gamesPlayed', 'xp'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'wins';

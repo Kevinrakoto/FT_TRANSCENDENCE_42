@@ -3,7 +3,6 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { FriendRequest } from "@/types/chat"
 
 export async function GET() {
   try {
@@ -28,6 +27,7 @@ export async function GET() {
           select: {
             id: true,
             username: true,
+            avatar: true,
             tankColor: true
           }
         }

@@ -17,7 +17,6 @@ interface GameRecord {
 interface UserData {
   id: number
   username: string
-  tankName: string
   tankColor: string
   tankLevel: number
   xp: number
@@ -165,10 +164,6 @@ export default function UserProfileClient({ user, currentUserId }: Props) {
 
           <div className="space-y-3">
             <div className="flex justify-between items-center py-3 border-b border-gray-700">
-              <span className="text-gray-400">Tank Name</span>
-              <span className="text-white font-medium">{user.tankName || 'Default'}</span>
-            </div>
-            <div className="flex justify-between items-center py-3 border-b border-gray-700">
               <span className="text-gray-400">Wins</span>
               <span className="text-green-400 font-bold">{user.wins}</span>
             </div>
@@ -223,13 +218,6 @@ export default function UserProfileClient({ user, currentUserId }: Props) {
         )}
 
         <div className="flex gap-3">
-          <button
-            onClick={handleSendFriendRequest}
-            disabled={addingFriend || friendStatus !== null}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors"
-          >
-            {friendStatus || (addingFriend ? 'Sending...' : 'Add Friend')}
-          </button>
           <Link
             href="/home"
             className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium text-center transition-colors"

@@ -4,14 +4,12 @@ import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { chatSocket } from '@/lib/socket-client'
 
 interface UserProfile {
   id: number
   email: string
   username: string
   avatar: string | null
-  tankName: string
   tankLevel: number
   gamesAsPlayer: number
   isOnline: boolean
@@ -25,8 +23,7 @@ export default function ProfilesClient() {
   const [editing, setEditing] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [formData, setFormData] = useState({
-    username: '',
-    tankName: ''
+    username: ''
   })
 
   useEffect(() => {
@@ -38,28 +35,8 @@ export default function ProfilesClient() {
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
       fetchProfile()
-      updateOnlineStatus(true)
-      chatSocket.connect(String(session.user.id), session.user.username, session.user.tankName)
-    }
-
-    return () => {
-      if (status === 'authenticated') {
-        updateOnlineStatus(false)
-      }
     }
   }, [status, session])
-
-  const updateOnlineStatus = async (isOnline: boolean) => {
-    try {
-      await fetch('/api/me/online', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isOnline })
-      })
-    } catch (error) {
-      console.error('Error updating online status:', error)
-    }
-  }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -78,9 +55,6 @@ export default function ProfilesClient() {
       if (res.ok) {
         const data = await res.json()
         setProfile(prev => prev ? { ...prev, avatar: data.user.avatar } : null)
-        if (session?.user) {
-          chatSocket.updateProfile(session.user.id, { avatar: data.user.avatar })
-        }
       }
     } catch (error) {
       console.error('Error uploading avatar:', error)
@@ -96,8 +70,7 @@ export default function ProfilesClient() {
       if (data.user) {
         setProfile(data.user)
         setFormData({
-          username: data.user.username || '',
-          tankName: data.user.tankName || ''
+          username: data.user.username || ''
         })
       }
     } catch (error) {
@@ -124,7 +97,6 @@ export default function ProfilesClient() {
         if (session?.user) {
           chatSocket.updateProfile(session.user.id, {
             username: data.user.username,
-            tankName: data.user.tankName
           })
         }
       }
@@ -136,7 +108,7 @@ export default function ProfilesClient() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="loading-text">LOADING...</div>
       </div>
     )
   }
@@ -170,9 +142,9 @@ export default function ProfilesClient() {
               ) : (
                 <div
                   className="w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold text-white"
-                  style={{ backgroundColor: profile?.tankName ? `#${Math.abs(parseInt(profile.tankName)).toString(16).slice(0,6)}` || '#4CAF50' : '#4CAF50' }}
+                  style={{ backgroundColor: '#4CAF50' }}
                 >
-                  {profile?.tankName?.charAt(0)?.toUpperCase() || profile?.username?.charAt(0)?.toUpperCase() || '?'}
+                  {profile?.username?.charAt(0)?.toUpperCase() || '?'}
                 </div>
               )}
               <label className="absolute bottom-0 right-0 bg-green-600 hover:bg-green-700 text-white p-2 rounded-full cursor-pointer">
@@ -203,15 +175,6 @@ export default function ProfilesClient() {
                   className="w-full bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
-              <div>
-                <label className="block text-gray-400 mb-2">Tank Name</label>
-                <input
-                  type="text"
-                  value={formData.tankName}
-                  onChange={(e) => setFormData({ ...formData, tankName: e.target.value })}
-                  className="w-full bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
               <div className="flex gap-4">
                 <button
                   type="submit"
@@ -233,10 +196,6 @@ export default function ProfilesClient() {
               <div className="flex justify-between items-center py-3 border-b border-gray-700">
                 <span className="text-gray-400">Username</span>
                 <span className="text-white font-medium">{profile?.username || 'Not set'}</span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                <span className="text-gray-400">Tank Name</span>
-                <span className="text-white font-medium">{profile?.tankName || 'Not set'}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-gray-700">
                 <span className="text-gray-400">Email</span>

@@ -66,7 +66,6 @@ export default async function ChatPage({ params, searchParams }: Props) {
       id: true,
       username: true,
       avatar: true,
-      tankName: true,
       tankColor: true,
       isOnline: true
     }
@@ -80,7 +79,6 @@ export default async function ChatPage({ params, searchParams }: Props) {
     id: currentUserId,
     username: session.user.username,
     avatar: session.user.avatar,
-    tankName: session.user.tankName || '',
     tankColor: session.user.tankColor || '#00ff00'
   }
 

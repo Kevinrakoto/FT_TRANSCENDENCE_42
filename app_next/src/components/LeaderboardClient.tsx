@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { chatSocket } from '@/lib/socket-client'
 import { useChatNotifications } from '@/hooks/useChatNotifications'
 
 interface LeaderboardPlayer {
@@ -36,18 +35,6 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
   }, [status, session, router])
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
-      chatSocket.connect(String(session.user.id), session.user.username, session.user.tankName)
-    }
-
-    return () => {
-      if (status === 'authenticated') {
-        chatSocket.disconnect()
-      }
-    }
-  }, [status, session])
-
-  useEffect(() => {
     if (status !== 'authenticated') return
 
     async function fetchLeaderboard() {
@@ -70,9 +57,6 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
   }, [status, sortBy])
 
   const handleLogout = async () => {
-    if (session?.user) {
-      chatSocket.disconnect()
-    }
     await signOut({ redirect: false })
     window.location.href = '/signin'
   }
@@ -107,13 +91,14 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        <div className="loading-text">CHARGEMENT...</div>
+        <div className="loading-text">LOADING...</div>
       </div>
     )
   }
 
   return (
-    <div className="game-container">
+    <div className="landing-container">
+      <div className='landing-background'></div>
       <Link href="/friends" className="friends-button" title="friend list">
         <svg
           className="friends-icon"
@@ -162,8 +147,7 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
       <div className="dashboard-container">
         <header className="dashboard-header">
           <h1 className="dashboard-title">
-            <span className="title-top">CLASSEMENT</span>
-            <span className="title-main">LEADERBOARD</span>
+            <span className="title-top">LEADERBOARD</span>
           </h1>
         </header>
 
@@ -173,13 +157,13 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
               className={`sort-button ${sortBy === 'wins' ? 'active' : ''}`}
               onClick={() => setSortBy('wins')}
             >
-              VICTOIRES
+              WINS
             </button>
             <button
               className={`sort-button ${sortBy === 'gamesPlayed' ? 'active' : ''}`}
               onClick={() => setSortBy('gamesPlayed')}
             >
-              PARTIES
+              GAMES
             </button>
             <button
               className={`sort-button ${sortBy === 'xp' ? 'active' : ''}`}
@@ -192,10 +176,10 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
           <div className="leaderboard-list">
             {loading ? (
               <div style={{ textAlign: 'center', padding: '20px', color: '#8b8b8b' }}>
-                CHARGEMENT...
+                LOADING...
               </div>
             ) : (
-              players.map((player, index) => (
+              players?.map((player, index) => (
                 <div
                   key={player.id}
                   className={`leaderboard-row rank-${getRankColor(index)}`}
@@ -229,180 +213,10 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
           </div>
 
           <Link href="/dashboard/me" className="back-link">
-            ← MON PROFIL
+            ← MY PROFILE
           </Link>
         </div>
       </div>
-
-      <style jsx>{`
-        .notification-badge {
-          position: absolute;
-          top: -5px;
-          right: -5px;
-          min-width: 18px;
-          height: 18px;
-          padding: 0 5px;
-          border-radius: 9px;
-          background: #ef4444;
-          color: white;
-          font-size: 10px;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .sort-buttons {
-          display: flex;
-          gap: 15px;
-          margin-bottom: 30px;
-          justify-content: center;
-        }
-
-        .sort-button {
-          padding: 12px 25px;
-          background: rgba(30, 30, 50, 0.8);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          color: #8b8b8b;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 2px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .sort-button:hover {
-          background: rgba(50, 50, 70, 0.8);
-          color: white;
-        }
-
-        .sort-button.active {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-color: transparent;
-          color: white;
-          box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .leaderboard-list {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .leaderboard-row {
-          display: flex;
-          align-items: center;
-          padding: 20px;
-          background: rgba(20, 20, 35, 0.9);
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          transition: all 0.3s ease;
-        }
-
-        .leaderboard-row:hover {
-          transform: translateX(5px);
-          border-color: rgba(102, 126, 234, 0.3);
-        }
-
-        .leaderboard-row.rank-gold {
-          background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(20, 20, 35, 0.9) 100%);
-          border-color: rgba(255, 215, 0, 0.3);
-        }
-
-        .leaderboard-row.rank-silver {
-          background: linear-gradient(135deg, rgba(192, 192, 192, 0.15) 0%, rgba(20, 20, 35, 0.9) 100%);
-          border-color: rgba(192, 192, 192, 0.3);
-        }
-
-        .leaderboard-row.rank-bronze {
-          background: linear-gradient(135deg, rgba(205, 127, 50, 0.15) 0%, rgba(20, 20, 35, 0.9) 100%);
-          border-color: rgba(205, 127, 50, 0.3);
-        }
-
-        .rank-cell {
-          width: 50px;
-          text-align: center;
-        }
-
-        .rank-icon {
-          font-size: 24px;
-        }
-
-        .player-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          padding-left: 15px;
-        }
-
-        .player-name {
-          color: white;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: color 0.2s ease;
-        }
-
-        .player-name:hover {
-          color: #60a5fa;
-        }
-
-        .player-level {
-          color: #8b8b8b;
-          font-size: 12px;
-        }
-
-        .player-stats {
-          display: flex;
-          gap: 25px;
-        }
-
-        .stat {
-          text-align: center;
-        }
-
-        .stat-label {
-          display: block;
-          color: #8b8b8b;
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 1px;
-          margin-bottom: 4px;
-        }
-
-        .stat-value {
-          display: block;
-          color: white;
-          font-size: 14px;
-          font-weight: 700;
-        }
-
-        .stat-value.wins {
-          color: #34d399;
-        }
-
-        .stat-value.xp {
-          color: #60a5fa;
-        }
-
-        .back-link {
-          display: inline-block;
-          margin-top: 30px;
-          color: #8b8b8b;
-          font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 2px;
-          text-decoration: none;
-          transition: all 0.3s ease;
-        }
-
-        .back-link:hover {
-          color: white;
-          transform: translateX(-5px);
-        }
-      `}</style>
     </div>
   )
 }

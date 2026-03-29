@@ -1,10 +1,11 @@
+// app/api/me/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { prisma } from '@/lib/prisma'
+import { emitSocketEvent } from '@/lib/notifications'
 
-
-const db = new PrismaClient()
+const db = prisma
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,8 +23,8 @@ export async function GET(request: NextRequest) {
         email: true,
         username: true,
         avatar: true,
-		tankColor: true,
         tankLevel: true,
+		tankColor: true,
         xp: true,
         wins: true,
         gamesPlayed: true,
@@ -65,9 +66,16 @@ export async function PUT(request: NextRequest) {
     const updatedUser = await db.user.update({
       where: { id: session.user.id },
       data: {
-        ...(tankColor && { tankColor })
+        ...(tankColor && { tankColor }),
       },
     })
+
+    if (tankColor) {
+      emitSocketEvent('user-profile-updated', {
+        userId: session.user.id,
+        tankColor,
+      })
+    }
 
     return NextResponse.json({ user: updatedUser })
 

@@ -13,12 +13,19 @@ export async function GET(
     
     if (!session) {
       return NextResponse.json(
-        { error: "Not authentified" },
+        { error: "Not authenticated" },
         { status: 401 }
       )
     }
 
     const conversationId = parseInt(params.id)
+    if (isNaN(conversationId)) {
+      return NextResponse.json(
+        { error: "Invalid conversation ID" },
+        { status: 400 }
+      )
+    }
+
     const userId = session.user.id
 
     const participant = await prisma.conversationParticipant.findFirst({
@@ -30,7 +37,7 @@ export async function GET(
 
     if (!participant) {
       return NextResponse.json(
-        { error: "No access autorised" },
+        { error: "Access denied" },
         { status: 403 }
       )
     }
@@ -42,7 +49,6 @@ export async function GET(
           select: {
             id: true,
             username: true,
-            tankName: true,
             tankColor: true
           }
         },
@@ -50,14 +56,15 @@ export async function GET(
           select: { userId: true }
         }
       },
-      orderBy: { createdAt: "asc" }
+      orderBy: { createdAt: "asc" },
+      take: 200
     })
 
     return NextResponse.json(messages)
   } catch (error) {
     console.error(error)
     return NextResponse.json(
-      { error: "Error server" },
+      { error: "Server error" },
       { status: 500 }
     )
   }

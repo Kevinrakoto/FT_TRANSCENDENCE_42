@@ -4,14 +4,12 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
-import { chatSocket } from '@/lib/socket-client'
 import { useChatNotifications } from '@/hooks/useChatNotifications'
 
 interface UserData {
   id: number
   username: string
   email: string
-  tankName: string
   tankLevel: number
   xp: number
   wins: number
@@ -33,18 +31,6 @@ export default function DashboardClient() {
       router.push('/signin')
     }
   }, [status, session, router])
-
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
-      chatSocket.connect(String(session.user.id), session.user.username, session.user.tankName)
-    }
-
-    return () => {
-      if (status === 'authenticated') {
-        chatSocket.disconnect()
-      }
-    }
-  }, [status, session])
 
   useEffect(() => {
     if (status !== 'authenticated') return
@@ -71,9 +57,6 @@ export default function DashboardClient() {
   }, [status])
 
   const handleLogout = async () => {
-    if (session?.user) {
-      chatSocket.disconnect()
-    }
     await signOut({ redirect: false })
     window.location.href = '/signin'
   }
@@ -225,7 +208,7 @@ export default function DashboardClient() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .notification-badge {
           position: absolute;
           top: -5px;

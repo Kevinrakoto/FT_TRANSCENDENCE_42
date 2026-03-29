@@ -7,7 +7,6 @@ import { chatSocket } from '@/lib/socket-client';
 type OnlinePlayer = {
   userId: string;
   username: string;
-  tankName?: string;
   socketId: string;
 };
 
@@ -21,7 +20,7 @@ type Message = {
 
 export default function OnlinePlayersClient() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<{ id: string; username: string; tankName?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; username: string } | null>(null);
   const [onlinePlayers, setOnlinePlayers] = useState<OnlinePlayer[]>([]);
   const [myFriends, setMyFriends] = useState<string[]>([]);
   const [chatWith, setChatWith] = useState<OnlinePlayer | null>(null);
@@ -49,8 +48,6 @@ export default function OnlinePlayersClient() {
 
   useEffect(() => {
     if (!currentUser) return;
-
-    chatSocket.connect(currentUser.id, currentUser.username, currentUser.tankName);
 
     const onPlayersUpdate = (players: OnlinePlayer[]) => {
       setOnlinePlayers(players.filter(p => p.userId !== currentUser.id));
@@ -113,7 +110,11 @@ export default function OnlinePlayersClient() {
     setNewMessage('');
   };
 
-  if (!currentUser) return <div>Loading...</div>;
+  if (!currentUser) return (
+    <div className="game-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="loading-text">LOADING...</div>
+    </div>
+  );
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -133,7 +134,7 @@ export default function OnlinePlayersClient() {
             return (
               <div key={player.userId} className="bg-white p-5 rounded-xl shadow flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-lg">{player.tankName || player.username}</p>
+                  <p className="font-bold text-lg">{player.username}</p>
                   <p className="text-gray-500">@{player.username}</p>
                 </div>
                 <div className="flex gap-3">
@@ -161,7 +162,7 @@ export default function OnlinePlayersClient() {
         {chatWith && (
           <div className="bg-gray-900 text-white p-6 rounded-2xl h-[600px] flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Chat with {chatWith.tankName || chatWith.username}</h2>
+              <h2 className="text-xl font-bold">Chat with {chatWith.username}</h2>
               <button onClick={closeChat} className="text-red-400">Close</button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-3 mb-4">

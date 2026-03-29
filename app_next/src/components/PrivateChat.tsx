@@ -16,6 +16,7 @@ interface Props {
 export default function PrivateChat({ conversationId, currentUser, otherUser }: Props) {
   const [inputMessage, setInputMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [sentFeedback, setSentFeedback] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { markAllAsRead } = useChatNotifications()
   
@@ -40,7 +41,6 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
         const res = await fetch(`/api/conversations/${conversationId}/messages`)
         if (res.ok) {
           const data = await res.json()
-          console.log('Messages received:', data)
           setMessages(data)
           
           const unreadIds = data
@@ -72,6 +72,8 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
     
     sendMessage(inputMessage)
     setInputMessage('')
+    setSentFeedback(true)
+    setTimeout(() => setSentFeedback(false), 1500)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -110,13 +112,13 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
                 className="user-avatar avatar-placeholder"
                 style={{ backgroundColor: otherUser.tankColor }}
               >
-                {otherUser.tankName?.charAt(0) || otherUser.username?.charAt(0)}
+                {otherUser.username?.charAt(0)}
               </div>
             )}
             <div className={`status-dot ${isOtherOnline ? 'online' : 'offline'}`} />
           </div>
           <div className="user-details">
-            <h3 className="user-name">{otherUser.tankName || otherUser.username}</h3>
+            <h3 className="user-name">{otherUser.username}</h3>
             <p className="user-status">
               {isOtherTyping ? (
                 <span className="typing">typing...</span>
@@ -139,7 +141,7 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
             <div className="message-bubble">
               {msg.userId !== currentUser.id && (
                 <p className="message-sender">
-                  {msg.user?.tankName || msg.user?.username}
+                  {msg.user?.username}
                 </p>
               )}
               <p className="message-content">{msg.content}</p>
@@ -164,6 +166,14 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
       </div>
 
       <form onSubmit={handleSubmit} className="chat-input-container">
+        {sentFeedback && (
+          <div className="sent-feedback">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            Sent!
+          </div>
+        )}
         <input
           type="text"
           value={inputMessage}
@@ -183,7 +193,7 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
         </button>
       </form>
 
-      <style jsx>{`
+      <style>{`
         .chat-container {
           display: flex;
           flex-direction: column;
@@ -395,6 +405,7 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
           padding: 16px 20px;
           background: rgba(30, 30, 40, 0.95);
           border-top: 1px solid rgba(255, 255, 255, 0.1);
+          position: relative;
         }
 
         .chat-input {
@@ -440,6 +451,32 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
         .send-button:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+        }
+
+        .sent-feedback {
+          position: absolute;
+          top: -30px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 12px;
+          background: rgba(16, 185, 129, 0.2);
+          border: 1px solid rgba(16, 185, 129, 0.4);
+          border-radius: 6px;
+          color: #34d399;
+          font-size: 12px;
+          font-weight: 600;
+          animation: fadeInOut 1.5s ease;
+          pointer-events: none;
+        }
+
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: translateX(-50%) translateY(5px); }
+          15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(-5px); }
         }
       `}</style>
     </div>
