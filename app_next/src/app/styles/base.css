@@ -11,7 +11,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ========== SCROLLBAR ========== */
 
 .game-container::-webkit-scrollbar {
   width: 10px;
@@ -51,5 +50,9 @@ body {
 .card-body::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, var(--menu-text));
   box-shadow: 0 0 15px var(--menu-text);
+}
+
+.player-info::-webkit-scrollbar  {
+  width: 5px
 }
 

@@ -23,7 +23,7 @@
   position: relative;
   padding: 10px 20px;
   cursor: pointer;
-  /* animation: fadeInUp 0.6s ease-out backwards; */
+  animation: fadeInUp 0.6s ease-out backwards;
 }
 
 .text-welc {

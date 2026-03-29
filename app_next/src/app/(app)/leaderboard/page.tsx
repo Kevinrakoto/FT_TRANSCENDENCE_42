@@ -25,6 +25,7 @@ async function getLeaderboard() {
         xp: true,
         wins: true,
         gamesPlayed: true,
+        kills: true
       },
       orderBy: { wins: 'desc' },
       take: 20,
@@ -39,5 +40,5 @@ async function getLeaderboard() {
 export default async function LeaderboardPage() {
   const players = await getLeaderboard()
 
-  return <LeaderboardClient />
+  return <LeaderboardClient initialPlayers={players} />
 }

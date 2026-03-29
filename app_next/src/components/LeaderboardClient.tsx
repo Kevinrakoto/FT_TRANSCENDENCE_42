@@ -13,6 +13,7 @@ interface LeaderboardPlayer {
   xp: number
   wins: number
   gamesPlayed: number
+  kills: number
 }
 
 interface LeaderboardClientProps {
@@ -25,7 +26,7 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
   const { unreadMessagesCount, unreadFriendRequestsCount } = useChatNotifications()
   const [players, setPlayers] = useState<LeaderboardPlayer[]>(initialPlayers)
   const [loading, setLoading] = useState(false)
-  const [sortBy, setSortBy] = useState<'wins' | 'gamesPlayed' | 'xp'>('wins')
+  const [sortBy, setSortBy] = useState<'wins' | 'gamesPlayed' | 'xp' | 'kills'>('wins')
 
   useEffect(() => {
     if (status === 'loading') return
@@ -97,8 +98,7 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
   }
 
   return (
-    <div className="landing-container">
-      <div className='landing-background'></div>
+    <div className="game-container">
       <Link href="/friends" className="friends-button" title="friend list">
         <svg
           className="friends-icon"
@@ -166,10 +166,10 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
               GAMES
             </button>
             <button
-              className={`sort-button ${sortBy === 'xp' ? 'active' : ''}`}
-              onClick={() => setSortBy('xp')}
+              className={`sort-button ${sortBy === 'kills' ? 'active' : ''}`}
+              onClick={() => setSortBy('kills')}
             >
-              XP
+              kills
             </button>
           </div>
 
@@ -179,7 +179,7 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
                 LOADING...
               </div>
             ) : (
-              players.map((player, index) => (
+              players?.map((player, index) => (
                 <div
                   key={player.id}
                   className={`leaderboard-row rank-${getRankColor(index)}`}
@@ -212,8 +212,8 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
             )}
           </div>
 
-          <Link href="/dashboard/me" className="back-link">
-            ← MY PROFILE
+          <Link href="/dashboard/me" className="menu-item">
+             MY PROFILE
           </Link>
         </div>
       </div>

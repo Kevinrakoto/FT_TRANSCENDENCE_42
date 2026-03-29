@@ -15,14 +15,3 @@
 @import "./styles/components/dashboard.css";
 @import "./styles/components/leaderboard.css";
 
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Nunito', 'Orbitron', 'Roboto', sans-serif;
-  overflow-x: hidden;
-}
