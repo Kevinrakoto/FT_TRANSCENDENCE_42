@@ -11,27 +11,40 @@ export default function MultiplayerGameClient() {
 	const [error, setError] = useState<string | null>(null);
 	const [gameMode, setGameMode] = useState<number | null>(null);
 	const [isGameRunning, setIsGameRunning] = useState(false);
-	const [timeLeft, setTimeLeft] = useState<number | null>(null);
 	const [gameOverData, setGameOverData] = useState<any>(null);
 	const [leaderboard, setLeaderboard] = useState([]);
-
-	const formatTime = (seconds: number) => {
-		const minutes = Math.floor(seconds / 60);
-		const secs = seconds % 60;
-		return `${minutes}:${secs.toString().padStart(2, '0')}`;
-	};
+	const [freshUserData, setFreshUserData] = useState<any>(null);
 
 	const gameContainerRef = useRef(null);
 
 	useEffect(() => {
 		if (status === "loading") return;
-		if (!gameMode || !gameContainerRef.current) return;
-
 		if (!session) {
 			router.replace('/signin');
-			return;
+			return ;
 		}
 
+		async function fetchUserData() {
+			try {
+				const res = await fetch('/api/me');
+				if (res.ok) {
+					const data = await res.json();
+					setFreshUserData({
+						id: data.user.id,
+						username: data.user.username,
+						tankColor: data.user.tankColor
+					});
+				}
+			} catch (e) {
+				console.error('Error fetching user data:', e);
+			}
+		}
+
+		fetchUserData();
+	}, [session, status, router]);
+
+	useEffect(() => {
+		if (!gameMode || !gameContainerRef.current || !freshUserData) return;
 		try {
 			const canvas = document.createElement('canvas');
 			const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -44,23 +57,18 @@ export default function MultiplayerGameClient() {
 		}
 
 		const gameCallback = {
-			onTimeUpdate: (seconds: number) => setTimeLeft(seconds),
 			onGameStart: () => setIsGameRunning(true),
 			onGameOver: (data) => setGameOverData(data),
 			onLeaderboardUpdate: (data: any) => setLeaderboard(data)
 		};
 
-		const userData = {
-			id: session.user.id,
-			username: session.user.username || 'Player',
-		};
-		const cleanup = launchGame(gameContainerRef.current, gameCallback, userData, gameMode);
+		const cleanup = launchGame(gameContainerRef.current, gameCallback, freshUserData, gameMode);
 
 		return () => {
 			cleanup();
 		};
 
-	}, [session, status, router, gameMode]);
+	}, [gameMode, freshUserData]);
 
     if (!gameMode) {
         return (
@@ -120,15 +128,6 @@ export default function MultiplayerGameClient() {
 			← Return
 		</button>
 
-		{timeLeft && (
-			<div className="absolute bottom-10 translate-x-1/2
-						bg-black/50 text-white font-mono text-4xl
-						font-bold px-10 py-6 rounded-lg z-50
-						border-gray-500 shadow-lg">
-				{formatTime(timeLeft)}
-			</div>
-		)}
-
         {!isGameRunning && (
             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-950 text-white">
                 <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -137,28 +136,41 @@ export default function MultiplayerGameClient() {
                 <button onClick={() => window.location.reload()} className="mt-8 text-sm underline text-gray-400 hover:text-white">Cancel</button>
             </div>
         )}
+
         {/* GAME OVER SCREEN */}
-        {gameOverData && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-500">
-                <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-                    
-                    {/* Background Glow Effect */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-gradient-to-b from-blue-500/20 to-transparent blur-3xl pointer-events-none"/>
+        {gameOverData && (() => {
+            // Sort the leaderboard locally to find who has the most points
+            const sortedBoard = [...leaderboard].sort((a: any, b: any) => b.score - a.score);
+            const topPlayer = sortedBoard[0]?.username;
+            const isWinner = topPlayer === freshUserData?.username;
 
-                    <div className="text-center mb-8 relative z-10">
-                        <h1 className="text-5xl font-black text-white tracking-tighter mb-2 italic">
-                            MATCH OVER
-                        </h1>
-                        <p className="text-gray-400 uppercase tracking-widest text-sm">
-                            Final Results
-                        </p>
-                    </div>
+            return (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-500">
+                    <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+                        
+                        {/* Background Glow Effect */}
+                        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 blur-3xl pointer-events-none ${
+                            isWinner 
+                            ? 'bg-gradient-to-b from-yellow-500/30 to-transparent' 
+                            : 'bg-gradient-to-b from-red-500/30 to-transparent'
+                        }`}/>
 
-                    {/* Final Standings List */}
-                    <div className="space-y-3 mb-8">
-                        {leaderboard
-                            .sort((a, b) => b.score - a.score)
-                            .map((p, index) => (
+                        <div className="text-center mb-8 relative z-10">
+                            <h1 className={`text-5xl font-black tracking-tighter mb-2 italic ${
+                                isWinner ? 'text-yellow-400' : 'text-red-500'
+                            }`}>
+                                {isWinner ? 'YOU WIN!' : 'YOU LOSE'}
+                            </h1>
+                            <p className="text-gray-400 uppercase tracking-widest text-sm">
+                                {isWinner 
+                                    ? 'Victory Secured' 
+                                    : `${topPlayer || 'Someone'} won the match`}
+                            </p>
+                        </div>
+
+                        {/* Final Standings List */}
+                        <div className="space-y-3 mb-8 relative z-10">
+                            {sortedBoard.map((p: any, index: number) => (
                                 <div key={p.username} className={`flex items-center justify-between p-4 rounded-xl border ${
                                     index === 0 
                                         ? 'bg-yellow-500/10 border-yellow-500/50' 
@@ -174,31 +186,32 @@ export default function MultiplayerGameClient() {
                                             {p.username}
                                         </span>
                                     </div>
-                                    <span className="font-mono text-xl font-bold">
+                                    <span className="font-mono text-xl font-bold text-white">
                                         {p.score} <span className="text-xs text-gray-500 font-normal ml-1">KILLS</span>
                                     </span>
                                 </div>
                             ))}
-                    </div>
+                        </div>
 
-                    {/* Action Buttons */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="py-4 bg-white text-black font-black rounded-xl hover:bg-gray-200 hover:scale-[1.02] transition-all active:scale-95"
-                        >
-                            PLAY AGAIN
-                        </button>
-                        <button
-                            onClick={() => router.back()}
-                            className="py-4 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-700 hover:scale-[1.02] transition-all active:scale-95"
-                        >
-                            EXIT
-                        </button>
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-2 gap-4 relative z-10">
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="py-4 bg-white text-black font-black rounded-xl hover:bg-gray-200 hover:scale-[1.02] transition-all active:scale-95"
+                            >
+                                PLAY AGAIN
+                            </button>
+                            <button
+                                onClick={() => router.back()}
+                                className="py-4 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-700 hover:scale-[1.02] transition-all active:scale-95"
+                            >
+                                EXIT
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        )}
+            );
+        })()}
 
         {/* LIVE HUD LEADERBOARD */}
         <div className="absolute top-4 right-4 z-40 bg-black/60 text-white p-4 rounded-xl backdrop-blur-md border border-white/10 shadow-xl min-w-[200px]">
