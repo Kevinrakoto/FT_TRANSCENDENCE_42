@@ -126,11 +126,8 @@ enum ConversationType {
 model GameHistory {
   id          Int      @id @default(autoincrement())
   playerId    Int
-  opponentId  Int?
   winnerId    Int?
-  playerScore Int      @default(0)
-  opponentScore Int?
-  duration    Int
+  kills	      Int      @default(0)
   createdAt   DateTime @default(now())
 
   player   User   @relation("PlayerGames", fields: [playerId], references: [id])
