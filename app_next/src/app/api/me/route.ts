@@ -1,4 +1,3 @@
-// app/api/me/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { getServerSession } from "next-auth"
@@ -23,7 +22,7 @@ export async function GET(request: NextRequest) {
         email: true,
         username: true,
         avatar: true,
-        tankName: true,
+		tankColor: true,
         tankLevel: true,
         xp: true,
         wins: true,
@@ -61,13 +60,12 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { tankName, tankColor } = body
+    const { tankColor } = body
 
     const updatedUser = await db.user.update({
       where: { id: session.user.id },
       data: {
-        ...(tankName && { tankName }),
-        ...(tankColor && { tankColor }),
+        ...(tankColor && { tankColor })
       },
     })
 

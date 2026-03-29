@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, email, password, tankColor, tankName } = body;
+    const { username, email, password, tankColor } = body;
 
     // Validation des données
     if (!username || !email || !password) {
@@ -40,15 +40,13 @@ export async function POST(request: NextRequest) {
         username,
         email,
         password: hashedPassword,
-        tankColor,
-        tankName: tankName || `Tank_${username}`,
+        tankColor
       },
       select: {
         id: true,
         username: true,
         email: true,
         tankColor: true,
-        tankName: true,
       },
     });
 
