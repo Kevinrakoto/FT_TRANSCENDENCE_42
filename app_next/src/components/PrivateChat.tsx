@@ -3,6 +3,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useChatSocket } from '@/hooks/useChatSocket'
+import { useChatNotifications } from '@/hooks/useChatNotifications'
+import { chatSocket } from '@/lib/socket-client'
 import { User, Message } from '@/types/chat'
 
 interface Props {
@@ -15,6 +17,7 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
   const [inputMessage, setInputMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { markAllAsRead } = useChatNotifications()
   
   const {
     messages,
@@ -39,6 +42,15 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
           const data = await res.json()
           console.log('Messages received:', data)
           setMessages(data)
+          
+          const unreadIds = data
+            .filter((m: any) => !m.read && m.userId !== currentUser.id)
+            .map((m: any) => m.id.toString())
+          
+          if (unreadIds.length > 0) {
+            chatSocket.markAsRead(conversationId, unreadIds, String(currentUser.id))
+            markAllAsRead()
+          }
         }
       } catch (error) {
         console.error('Error loading messages:', error)
@@ -48,7 +60,7 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
     }
 
     fetchMessages()
-  }, [conversationId, setMessages])
+  }, [conversationId, setMessages, currentUser.id, markAllAsRead])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })

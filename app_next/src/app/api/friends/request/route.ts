@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { createNotification } from "@/lib/notifications"
+import { createNotification, emitFriendNotification } from "@/lib/notifications"
 
 export async function POST(req: Request) {
   try {
@@ -58,6 +58,34 @@ export async function POST(req: Request) {
           { status: 400 }
         )
       }
+      if (existing.status === "DECLINED") {
+        await prisma.friendship.update({
+          where: { id: existing.id },
+          data: { status: "PENDING" }
+        })
+        
+        const sender = await prisma.user.findUnique({
+          where: { id: senderId },
+          select: { username: true }
+        })
+    
+        await createNotification(
+          receiver.id,
+          "FRIEND_REQUEST",
+          "New Friend Request",
+          `${sender?.username || 'A user'} sent you a friend request`,
+          { senderId, friendshipId: existing.id }
+        )
+
+        await emitFriendNotification(receiver.id, 'friend-notification', {
+          type: 'friend_request',
+          friendshipId: existing.id,
+          fromUserId: senderId,
+          fromUsername: sender?.username,
+        })
+    
+        return NextResponse.json({ success: true, message: "Request resent" })
+      }
     }
 
     const friendship = await prisma.friendship.create({
@@ -90,6 +118,13 @@ export async function POST(req: Request) {
       `${sender?.username || 'A user'} sent you a friend request`,
       { senderId, friendshipId: friendship.id }
     )
+
+    await emitFriendNotification(receiver.id, 'friend-notification', {
+      type: 'friend_request',
+      friendshipId: friendship.id,
+      fromUserId: senderId,
+      fromUsername: sender?.username,
+    })
 
     return NextResponse.json(friendship)
   } catch (error) {
