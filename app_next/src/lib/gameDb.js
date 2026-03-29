@@ -18,7 +18,7 @@ async function recordGameResult(leaderboard, winnerUsername)
 
 			    if (user)
 			    {
-				    await prisma.gameResult.create({
+				    await prisma.gameHistory.create({
 					    data: {
 						    playerId: user.id,
 						    winnerId: winnerId,
@@ -28,7 +28,7 @@ async function recordGameResult(leaderboard, winnerUsername)
 				    await prisma.user.update({
 					    where: { id: user.id },
 					    data: {
-						    Kills: user.score,
+						    kills: user.score,
 						    gamesPlayed: { increment: 1 },
 						    wins: winnerId === user.id ? { increment: 1 } : undefined,
 					    },

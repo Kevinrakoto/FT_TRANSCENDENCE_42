@@ -5,6 +5,8 @@ const lobbies = {
 	4: []
 };
 
+const { recordGameResult } = require('./src/lib/gameDb.js');
+
 const players = new Map();
 
 module.exports = (io) => {
@@ -151,6 +153,7 @@ module.exports = (io) => {
 					});
 
 					if (playerSocket.data.score >= 5) {
+						recordGameResult(leaderboard, playerSocket.data.username);
 						matchPlayers.forEach( p => {
 							p.emit('gameOver', {
 								leaderboard: leaderboard
