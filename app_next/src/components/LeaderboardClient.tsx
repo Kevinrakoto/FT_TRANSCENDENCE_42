@@ -147,7 +147,6 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
         <header className="dashboard-header">
           <h1 className="dashboard-title">
             <span className="title-top">LEADERBOARD</span>
-            <span className="title-main">LEADERBOARD</span>
           </h1>
         </header>
 
@@ -179,7 +178,7 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
                 LOADING...
               </div>
             ) : (
-              players.map((player, index) => (
+              players?.map((player, index) => (
                 <div
                   key={player.id}
                   className={`leaderboard-row rank-${getRankColor(index)}`}
@@ -217,176 +216,6 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
           </Link>
         </div>
       </div>
-
-      <style>{`
-        .notification-badge {
-          position: absolute;
-          top: -5px;
-          right: -5px;
-          min-width: 18px;
-          height: 18px;
-          padding: 0 5px;
-          border-radius: 9px;
-          background: #ef4444;
-          color: white;
-          font-size: 10px;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .sort-buttons {
-          display: flex;
-          gap: 15px;
-          margin-bottom: 30px;
-          justify-content: center;
-        }
-
-        .sort-button {
-          padding: 12px 25px;
-          background: rgba(30, 30, 50, 0.8);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          color: #8b8b8b;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 2px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .sort-button:hover {
-          background: rgba(50, 50, 70, 0.8);
-          color: white;
-        }
-
-        .sort-button.active {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-color: transparent;
-          color: white;
-          box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .leaderboard-list {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .leaderboard-row {
-          display: flex;
-          align-items: center;
-          padding: 20px;
-          background: rgba(20, 20, 35, 0.9);
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          transition: all 0.3s ease;
-        }
-
-        .leaderboard-row:hover {
-          transform: translateX(5px);
-          border-color: rgba(102, 126, 234, 0.3);
-        }
-
-        .leaderboard-row.rank-gold {
-          background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(20, 20, 35, 0.9) 100%);
-          border-color: rgba(255, 215, 0, 0.3);
-        }
-
-        .leaderboard-row.rank-silver {
-          background: linear-gradient(135deg, rgba(192, 192, 192, 0.15) 0%, rgba(20, 20, 35, 0.9) 100%);
-          border-color: rgba(192, 192, 192, 0.3);
-        }
-
-        .leaderboard-row.rank-bronze {
-          background: linear-gradient(135deg, rgba(205, 127, 50, 0.15) 0%, rgba(20, 20, 35, 0.9) 100%);
-          border-color: rgba(205, 127, 50, 0.3);
-        }
-
-        .rank-cell {
-          width: 50px;
-          text-align: center;
-        }
-
-        .rank-icon {
-          font-size: 24px;
-        }
-
-        .player-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          padding-left: 15px;
-        }
-
-        .player-name {
-          color: white;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: color 0.2s ease;
-        }
-
-        .player-name:hover {
-          color: #60a5fa;
-        }
-
-        .player-level {
-          color: #8b8b8b;
-          font-size: 12px;
-        }
-
-        .player-stats {
-          display: flex;
-          gap: 25px;
-        }
-
-        .stat {
-          text-align: center;
-        }
-
-        .stat-label {
-          display: block;
-          color: #8b8b8b;
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 1px;
-          margin-bottom: 4px;
-        }
-
-        .stat-value {
-          display: block;
-          color: white;
-          font-size: 14px;
-          font-weight: 700;
-        }
-
-        .stat-value.wins {
-          color: #34d399;
-        }
-
-        .stat-value.xp {
-          color: #60a5fa;
-        }
-
-        .back-link {
-          display: inline-block;
-          margin-top: 30px;
-          color: #8b8b8b;
-          font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 2px;
-          text-decoration: none;
-          transition: all 0.3s ease;
-        }
-
-        .back-link:hover {
-          color: white;
-          transform: translateX(-5px);
-        }
-      `}</style>
     </div>
   )
 }

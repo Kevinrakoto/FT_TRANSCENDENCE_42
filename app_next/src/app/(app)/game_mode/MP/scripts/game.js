@@ -100,7 +100,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 		[[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
 		 [4,-1, 0, 0, 0, 0, 0, 10,1, 0, 0, 0, 0,-2, 4],
 		 [4, 0, 0, 7, 0, 0, 0, 10,0, 9, 9, 9, 0, 0, 4],
-		 [4, 0, 0, 0, 0, 0, 0, 10,0, 9, 0, 9, 0, 0, 4],
+		 [4, 0, 0, 0, 0, 0, 0, 0 ,0, 9, 0, 9, 0, 0, 4],
 		 [4, 0, 8, 0, 0, 8, 0, 10,0, 2, 0, 2, 0, 0, 4],
 		 [4, 0, 0, 0, 0, 0, 0, 10,0, 9, 0, 9, 0, 0, 4],
 		 [4, 1, 2, 1, 0, 0, 0, 10,0, 9, 9, 9, 0, 0, 4],
@@ -108,7 +108,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 		 [4, 0, 0, 0, 0, 0, 0, 10,0, 7, 0, 0, 0, 0, 4],
 		 [4, 0, 8, 0, 0, 8, 0, 10,0, 0, 0, 7, 0, 0, 4],
 		 [4, 0, 0, 0, 0, 0, 0, 10,0, 0, 1, 1, 1, 0, 4],
-		 [4, 0, 7, 0, 0, 7, 0, 10,0, 0, 0, 0, 0, 0, 4],
+		 [4, 0, 7, 0, 0, 7, 0, 0 ,0, 0, 0, 0, 0, 0, 4],
 		 [4, 0, 0, 0, 0, 0, 0, 10,0, 8, 0, 8, 0, 0, 4],
 		 [4,-3, 0, 0, 0, 0, 0, 10,1, 0, 0, 0, 0,-4, 4],
 		 [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]],
@@ -164,6 +164,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 				auth: {
 					userId: userData.id,
 					username: userData.username,
+					tankColor: userData.tankColor,
 					gameMode: gameMode
 				},
 			});
@@ -355,6 +356,15 @@ export function launchGame(container, callbacks, userData, gameMode) {
 			}
 
 			if (player) {
+				player.traverse((c) => {
+					if(c.isMesh) {
+						c.material = c.material.clone();
+						if (c.material.color.g > c.material.color.r
+							&& c.material.color.g > c.material.color.b) {
+								c.material.color.set(data.playerColors[myPlayerNumber - 1]);
+						}
+					}
+				});
 				const myName = data.playerNames[data.myPlayerNumber - 1];
 				const nameLabel = createNameLabel(myName);
 				nameLabel.position.y = 3;
@@ -362,6 +372,15 @@ export function launchGame(container, callbacks, userData, gameMode) {
 			}
 
 			for (let key in remotePlayers) {
+				remotePlayers[key].traverse((c) => {
+					if(c.isMesh) {
+						c.material = c.material.clone();
+						if (c.material.color.g > c.material.color.r
+							&& c.material.color.g > c.material.color.b) {
+								c.material.color.set(data.playerColors[parseInt(key) - 1]);
+						}
+					}
+				});
 				const enemyName = data.playerNames[parseInt(key) - 1];
 				const nameLabel = createNameLabel(enemyName);
 				nameLabel.position.y = 3;
@@ -371,10 +390,6 @@ export function launchGame(container, callbacks, userData, gameMode) {
 			isGameRunning = true;
 			loaded = true;
 			callbacks.onGameStart();
-		});
-
-		socket.on('timeUpdate', (data) => {
-			callbacks.onTimeUpdate(data.seconds);
 		});
 
 		socket.on('gameOver', (data) => {
@@ -459,6 +474,14 @@ export function launchGame(container, callbacks, userData, gameMode) {
 				startReload(enemy);
 			}
 		});
+
+		socket.on('playerDisconnected', (data) => {
+			const enemy = remotePlayers[data.playerNumber];
+			if (enemy) {
+				scene.remove(enemy);
+				delete remotePlayers[data.playerNumber];
+			}
+		});
 	}
 
 	function hitBlock( x, y ) {
@@ -496,7 +519,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 		if (playerNumber == myPlayerNumber) playerhit = player;
 		else playerhit = remotePlayers[playerNumber];
 
-		if (playerhit) {
+		if (playerhit && playerhit.userData.dead === false) {
 			playerhit.userData.health -= 1;
 			const healthBar = playerhit.getObjectByName('healthBar');
 			if (healthBar) {
@@ -511,7 +534,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 					child.material.map = null;
 					child.material.color.set(0xffffff);
 					child.material.needsUpdate = true;
-					setTimeout(() => {
+					const interval = setInterval(() => {
 						if (child.material) {
 							child.material.map = originalMap;
 							child.material.color.copy(originalColor);
@@ -781,21 +804,6 @@ export function launchGame(container, callbacks, userData, gameMode) {
 			const tank = models.tank.clone();
 			tank.position.set(realX, -0.4, realZ);
 			tank.scale.set(1.2, 1.2, 1.2);
-			tank.traverse((c) => {
-				if(c.isMesh) {
-					c.material = c.material.clone();
-					if (spawnSlot === myPlayerNumber) {
-						if (c.material.color.g > c.material.color.r && c.material.color.g > c.material.color.b) {
-							c.material.color.set(0x55aabb);
-						}
-					}
-					else {
-						if (c.material.color.g > c.material.color.r && c.material.color.g > c.material.color.b) {
-							c.material.color.set(0xff5555);
-						}
-					}
-				}
-			});
 
 			const healthBar = createHealthBar(3);
 			healthBar.position.y = 2;

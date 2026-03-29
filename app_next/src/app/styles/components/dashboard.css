@@ -174,31 +174,3 @@
   to { bottom: 20px; opacity: 1; }
 }
 
-/* ========== BACK BUTTON ========== */
-
-.back-button {
-  position: fixed;
-  top: 30px;
-  left: 30px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 25px;
-  background: rgba(10, 14, 39, 0.8);
-  border: 2px solid var(--neon-blue);
-  border-radius: 8px;
-  color: var(--neon-blue);
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  z-index: 100;
-}
-
-.back-button:hover {
-  background: var(--neon-blue);
-  color: var(--dark-bg);
-  box-shadow: 0 0 25px rgba(0, 217, 255, 0.5);
-  transform: translateX(-5px);
-}

@@ -39,5 +39,5 @@ async function getLeaderboard() {
 export default async function LeaderboardPage() {
   const players = await getLeaderboard()
 
-  return <LeaderboardClient initialPlayers={players} />
+  return <LeaderboardClient />
 }

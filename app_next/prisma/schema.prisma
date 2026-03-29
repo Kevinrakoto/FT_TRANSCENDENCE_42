@@ -27,7 +27,7 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  gamesAsPlayer GameHistory[] @relation("PlayerGames")
+  gamesAsPlayer GamePlayer[] @relation("PlayerGames")
   sentFriendRequests  Friendship[] @relation("UserSentRequests")
   receivedFriendRequests Friendship[] @relation("UserReceivedRequests")
   friends User[] @relation("UserFriends")
@@ -125,12 +125,18 @@ enum ConversationType {
 
 model GameHistory {
   id          Int      @id @default(autoincrement())
-  playerId    Int
   winnerId    Int?
-  kills	      Int      @default(0)
   createdAt   DateTime @default(now())
+  players     GamePlayer[]
+}
 
-  player   User   @relation("PlayerGames", fields: [playerId], references: [id])
+model GamePlayer {
+  id	      Int	  @id @default(autoincrement())
+  gameId      Int
+  game        GameHistory @relation(fields: [gameId], references: [id])
+  playerId    Int
+  player      User        @relation("PlayerGames", fields: [playerId], references: [id])
+  kills	      Int         @default(0)
 }
 
 model ApiKey {

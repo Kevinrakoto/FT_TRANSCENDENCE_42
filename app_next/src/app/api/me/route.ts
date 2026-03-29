@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         username: true,
         avatar: true,
         tankLevel: true,
+		tankColor: true,
         xp: true,
         wins: true,
         gamesPlayed: true,

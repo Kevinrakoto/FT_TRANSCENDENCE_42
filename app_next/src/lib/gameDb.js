@@ -8,8 +8,14 @@ async function recordGameResult(leaderboard, winnerUsername)
 		    const winner = await prisma.user.findUnique({
 			    where: { username: winnerUsername },
 		    });
-
 		    const winnerId = winner ? winner.id : null;
+
+		    const game = await prisma.gameHistory.create({
+			    data: {
+				    winnerId: winnerId,
+			    },
+		    });
+
 		    for (const player of leaderboard)
 		    {
 			    const user = await prisma.user.findUnique({
@@ -18,17 +24,17 @@ async function recordGameResult(leaderboard, winnerUsername)
 
 			    if (user)
 			    {
-				    await prisma.gameHistory.create({
+				    await prisma.gamePlayer.create({
 					    data: {
+						    gameId: game.id,
 						    playerId: user.id,
-						    winnerId: winnerId,
-						    kills: player.kills,
+						    kills: player.score,
 					    },
 				    });
 				    await prisma.user.update({
 					    where: { id: user.id },
 					    data: {
-						    kills: user.score,
+						    kills: { increment: player.score },
 						    gamesPlayed: { increment: 1 },
 						    wins: winnerId === user.id ? { increment: 1 } : undefined,
 					    },

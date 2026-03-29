@@ -1,11 +1,11 @@
 
+const { recordGameResult } = require('./src/lib/gameDb.js');
+
 const lobbies = {
 	2: [],
 	3: [],
 	4: []
 };
-
-const { recordGameResult } = require('./src/lib/gameDb.js');
 
 const players = new Map();
 
