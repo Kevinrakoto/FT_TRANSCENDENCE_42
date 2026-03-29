@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { createNotification } from "@/lib/notifications"
+import { createNotification, emitFriendNotification } from "@/lib/notifications"
 
 export async function POST(req: Request) {
   try {
@@ -66,6 +66,14 @@ export async function POST(req: Request) {
       `${user?.username || 'A user'} accepted your friend request`,
       { userId, friendshipId }
     )
+
+    await emitFriendNotification(result.friendship.senderId, 'friend-notification', {
+      type: 'friend_accepted',
+      friendshipId,
+      fromUserId: userId,
+      fromUsername: user?.username,
+      conversationId: result.conversation.id,
+    })
 
     return NextResponse.json(result)
   } catch (error) {

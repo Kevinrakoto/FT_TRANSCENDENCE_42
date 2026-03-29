@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     // Validation des données
     if (!username || !email || !password) {
       return NextResponse.json(
-        { error: 'Tous les champs sont requis' },
+         { error: 'All fields are required' },
         { status: 400 }
       );
     }
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Email ou pseudo déjà utilisé' },
+         { error: 'Email or username already taken' },
         { status: 400 }
       );
     }
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { 
-        message: 'Compte créé avec succès', 
+         message: 'Account created successfully',
         user,
         redirect: '/login'
       },

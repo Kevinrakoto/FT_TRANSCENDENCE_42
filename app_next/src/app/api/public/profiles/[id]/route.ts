@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const db = new PrismaClient();
+import { prisma } from '@/lib/prisma';
+import { verifyApiKey } from '@/lib/api-auth';
 
 export async function GET(
   request: NextRequest,
@@ -18,12 +17,11 @@ export async function GET(
       );
     }
 
-    const profile = await db.user.findUnique({
+    const profile = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         username: true,
-        email: true,
         tankName: true,
         tankColor: true,
         tankLevel: true,
@@ -72,12 +70,27 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const userId = parseInt(id);
+    const targetUserId = parseInt(id);
 
-    if (isNaN(userId)) {
+    if (isNaN(targetUserId)) {
       return NextResponse.json(
         { error: 'Invalid profile ID' },
         { status: 400 }
+      );
+    }
+
+    const auth = await verifyApiKey(request);
+    if (!auth.valid) {
+      return NextResponse.json(
+        { error: auth.error },
+        { status: 401 }
+      );
+    }
+
+    if (auth.userId !== targetUserId) {
+      return NextResponse.json(
+        { error: 'Forbidden: you can only update your own profile' },
+        { status: 403 }
       );
     }
 
@@ -88,8 +101,8 @@ export async function PUT(
     if (tankName !== undefined) updates.tankName = tankName;
     if (tankColor !== undefined) updates.tankColor = tankColor;
 
-    const profile = await db.user.update({
-      where: { id: userId },
+    const profile = await prisma.user.update({
+      where: { id: targetUserId },
       data: updates,
       select: {
         id: true,
@@ -119,17 +132,32 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const userId = parseInt(id);
+    const targetUserId = parseInt(id);
 
-    if (isNaN(userId)) {
+    if (isNaN(targetUserId)) {
       return NextResponse.json(
         { error: 'Invalid profile ID' },
         { status: 400 }
       );
     }
 
-    await db.user.delete({
-      where: { id: userId },
+    const auth = await verifyApiKey(request);
+    if (!auth.valid) {
+      return NextResponse.json(
+        { error: auth.error },
+        { status: 401 }
+      );
+    }
+
+    if (auth.userId !== targetUserId) {
+      return NextResponse.json(
+        { error: 'Forbidden: you can only delete your own account' },
+        { status: 403 }
+      );
+    }
+
+    await prisma.user.delete({
+      where: { id: targetUserId },
     });
 
     return NextResponse.json({

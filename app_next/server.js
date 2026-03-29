@@ -14,8 +14,8 @@ const handle = app.getRequestHandler();
 const initTankGame = require('./tankServer');
 
 const httpsOptions = {
-  key: fs.readFileSync('./certificates/private-key.pem'),
-  cert: fs.readFileSync('./certificates/certificate.pem'),
+  key: fs.readFileSync('/app/certificates/private-key.pem'),
+  cert: fs.readFileSync('/app/certificates/cert.pem'),
 };
 
 const onlinePlayers = new Map();
@@ -35,6 +35,29 @@ function logOnlinePlayers(context) {
 
 app.prepare().then(() => {
   const server = createServer(httpsOptions, (req, res) => {
+    // Internal endpoint for API routes to emit Socket.IO events
+    if (req.method === 'POST' && req.url === '/api/emit-friend-notification') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const { targetUserId, event, data } = JSON.parse(body);
+          if (targetUserId && event) {
+            const targetPlayer = onlinePlayers.get(String(targetUserId));
+            if (targetPlayer) {
+              io.to(targetPlayer.socketId).emit(event, data);
+            }
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (e) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed' }));
+        }
+      });
+      return;
+    }
+
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
   });
@@ -72,7 +95,7 @@ app.prepare().then(() => {
       });
     } else {
       console.log(`⚠️  Conflit: ${userData.userId} déjà connecté avec un autre socket`);
-      socket.emit('dbl_connex', { message: 'Ce compte est déjà connecté ailleurs.' });
+      socket.emit('dbl_connex', { message: 'This account is already logged in from another session.' });
       socket.disconnect(true);
       return;
     }
@@ -294,7 +317,7 @@ app.prepare().then(() => {
   if (error) {
     console.error('Erreur démarrage serveur:', error);
   } else {
-    console.log('> Serveur prêt sur https://localhost:3000');
+    console.log('> Server ready on https://localhost:8443');
   }
   });
 

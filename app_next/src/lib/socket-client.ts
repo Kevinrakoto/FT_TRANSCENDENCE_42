@@ -3,7 +3,7 @@
 
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXTAUTH_URL || 'https://localhost:3000';
+const SOCKET_URL = process.env.NEXTAUTH_URL || 'https://localhost:8443';
 
 let socketInstance: Socket | null = null;
 let currentSocketUserId: string | null = null;
@@ -49,6 +49,9 @@ function initializeSocket(): Socket {
   socketInstance.on('dbl_connex', (data) => {
     console.warn('[SOCKET] Double connection detected:', data.message);
     currentSocketUserId = null;
+    import('next-auth/react').then(({ signOut }) => {
+      signOut({ callbackUrl: '/signin?error=already_connected' });
+    });
   });
 
   isSocketInitialized = true;

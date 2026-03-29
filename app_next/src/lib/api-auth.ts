@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 
 const db = new PrismaClient();
 
-export async function verifyApiKey(req: NextRequest): Promise<{ valid: boolean; error?: string; keyId?: number }> {
+export async function verifyApiKey(req: NextRequest): Promise<{ valid: boolean; error?: string; keyId?: number; userId?: number }> {
   const apiKey = getApiKey(req);
   
   if (!apiKey) {
@@ -34,7 +34,7 @@ export async function verifyApiKey(req: NextRequest): Promise<{ valid: boolean; 
       data: { lastUsedAt: new Date() },
     });
     
-    return { valid: true, keyId: apiKeyRecord.id };
+    return { valid: true, keyId: apiKeyRecord.id, userId: apiKeyRecord.userId };
   } catch (error) {
     return { valid: false, error: 'Failed to verify API key' };
   }
