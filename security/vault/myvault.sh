@@ -69,20 +69,20 @@ fi
 export VAULT_TOKEN=$(cat "$CONFIG_DIR/root_token")
 
 if [ ! -f "$CERTS_DIR/cert.pem" ]; then
-    echo -e "${YELLOW}[VAULT] Aucun certificat trouvé. Génération SSL...${NC}"
+    echo -e "${YELLOW}[VAULT] No certificate found. Generating SSL...${NC}"
     
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout "$CERTS_DIR/private-key.pem" \
         -out "$CERTS_DIR/cert.pem" \
         -subj "/C=FR/ST=Paris/L=Paris/O=42/CN=localhost"
     
-    # On ajuste les permissions pour que Nginx et l'App puissent lire
+
     chmod 644 "$CERTS_DIR/cert.pem"
     chmod 644 "$CERTS_DIR/private-key.pem"
     
-    echo -e "${GREEN}✅ Certificats SSL générés dans $CERTS_DIR.${NC}"
+    echo -e "${GREEN}✅ SSL certificates generated in $CERTS_DIR.${NC}"
 else
-    echo -e "${GREEN}✅ Utilisation des certificats SSL existants.${NC}"
+    echo -e "${GREEN}✅ Using existing SSL certificates..${NC}"
 fi
 
 echo -e "${YELLOW}[VAULT] Creating internal configuration file...${NC}"
@@ -97,12 +97,11 @@ if ! vault kv get secret/transcendence > /dev/null 2>&1; then
     RAND_PASS=$(openssl rand -hex 16)
     RAND_NEXT_SEC=$(openssl rand -hex 24)
     
-    # On stocke les briques individuelles
     vault kv put secret/transcendence \
         DB_USER="transcendence" \
         DB_PASSWORD="$RAND_PASS" \
         DB_NAME="db_transcendence" \
-        NEXTAUTH_URL="https://localhost:4343" \
+        NEXTAUTH_URL="https://localhost:8443" \
         NEXTAUTH_SECRET="$RAND_NEXT_SEC"
     
     echo -e "${GREEN}✅ Secrets generated and stored in the vault.${NC}"
