@@ -1,6 +1,5 @@
-import { PrismaClient, NotificationType } from '@prisma/client';
-
-const db = new PrismaClient();
+import { NotificationType } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 export async function createNotification(
   userId: number,
@@ -10,7 +9,7 @@ export async function createNotification(
   data?: Record<string, any>
 ) {
   try {
-    const notification = await db.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         userId,
         type,
@@ -36,7 +35,7 @@ export async function createNotifications(
   }>
 ) {
   try {
-    const created = await db.notification.createMany({
+    const created = await prisma.notification.createMany({
       data: notifications.map((n) => ({
         ...n,
         data: n.data || undefined,
@@ -55,12 +54,16 @@ export async function emitFriendNotification(
   data: Record<string, any>
 ) {
   try {
+    const https = await import('https')
+    const agent = new https.Agent({ rejectUnauthorized: false })
     await fetch('https://localhost:3000/api/emit-friend-notification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetUserId, event, data }),
+      // @ts-ignore - Node.js fetch supports agent
+      agent,
     });
   } catch {
-    // Socket.IO emit is best-effort, user will get notification on next poll
+    // Socket may not be connected - safe to ignore
   }
 }

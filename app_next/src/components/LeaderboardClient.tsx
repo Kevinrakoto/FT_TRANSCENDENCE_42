@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { chatSocket } from '@/lib/socket-client'
 import { useChatNotifications } from '@/hooks/useChatNotifications'
 
 interface LeaderboardPlayer {
@@ -36,18 +35,6 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
   }, [status, session, router])
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
-      chatSocket.connect(String(session.user.id), session.user.username, session.user.tankName)
-    }
-
-    return () => {
-      if (status === 'authenticated') {
-        chatSocket.disconnect()
-      }
-    }
-  }, [status, session])
-
-  useEffect(() => {
     if (status !== 'authenticated') return
 
     async function fetchLeaderboard() {
@@ -70,9 +57,6 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
   }, [status, sortBy])
 
   const handleLogout = async () => {
-    if (session?.user) {
-      chatSocket.disconnect()
-    }
     await signOut({ redirect: false })
     window.location.href = '/signin'
   }
@@ -107,7 +91,7 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        <div className="loading-text">CHARGEMENT...</div>
+        <div className="loading-text">LOADING...</div>
       </div>
     )
   }
@@ -162,7 +146,7 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
       <div className="dashboard-container">
         <header className="dashboard-header">
           <h1 className="dashboard-title">
-            <span className="title-top">CLASSEMENT</span>
+            <span className="title-top">LEADERBOARD</span>
             <span className="title-main">LEADERBOARD</span>
           </h1>
         </header>
@@ -173,13 +157,13 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
               className={`sort-button ${sortBy === 'wins' ? 'active' : ''}`}
               onClick={() => setSortBy('wins')}
             >
-              VICTOIRES
+              WINS
             </button>
             <button
               className={`sort-button ${sortBy === 'gamesPlayed' ? 'active' : ''}`}
               onClick={() => setSortBy('gamesPlayed')}
             >
-              PARTIES
+              GAMES
             </button>
             <button
               className={`sort-button ${sortBy === 'xp' ? 'active' : ''}`}
@@ -192,7 +176,7 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
           <div className="leaderboard-list">
             {loading ? (
               <div style={{ textAlign: 'center', padding: '20px', color: '#8b8b8b' }}>
-                CHARGEMENT...
+                LOADING...
               </div>
             ) : (
               players.map((player, index) => (
@@ -229,7 +213,7 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
           </div>
 
           <Link href="/dashboard/me" className="back-link">
-            ← MON PROFIL
+            ← MY PROFILE
           </Link>
         </div>
       </div>

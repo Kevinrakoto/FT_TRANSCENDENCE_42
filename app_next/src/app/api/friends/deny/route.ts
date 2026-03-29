@@ -33,11 +33,6 @@ export async function POST(req: Request) {
       )
     }
 
-    const sender = await prisma.user.findUnique({
-      where: { id: friendship.senderId },
-      select: { username: true, tankName: true }
-    })
-
     const receiver = await prisma.user.findUnique({
       where: { id: userId },
       select: { username: true }

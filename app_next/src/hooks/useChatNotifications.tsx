@@ -10,7 +10,6 @@ export interface ChatNotification {
   type: 'message' | 'friend_request' | 'friend_accepted' | 'friend_denied' | 'friend_removed'
   fromUserId: number
   fromUsername: string
-  fromTankName?: string
   conversationId?: number
   friendshipId?: number
   message?: string
@@ -85,7 +84,6 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
               type: 'friend_request',
               fromUserId: req.sender.id,
               fromUsername: req.sender.username,
-              fromTankName: req.sender.tankName,
               friendshipId: req.id,
               timestamp: new Date(req.createdAt),
               read: false,
@@ -120,11 +118,10 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
 
   // Real-time friend notification listener
   useEffect(() => {
-    if (!currentUserIdRef.current) return
+    if (!currentUserId) return
 
     function onFriendNotification(data: any) {
-      const userId = currentUserIdRef.current
-      if (!userId) return
+      if (!currentUserIdRef.current) return
 
       if (data.type === 'friend_request') {
         const notification: ChatNotification = {
@@ -185,10 +182,10 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     return () => {
       chatSocket.off('friend-notification', onFriendNotification)
     }
-  }, [])
+  }, [currentUserId, showToast, refreshFriendRequests])
 
   useEffect(() => {
-    if (!currentUserIdRef.current) return
+    if (!currentUserId) return
 
     function onNewMessage(data: any) {
       const userId = currentUserIdRef.current
@@ -199,7 +196,6 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
         type: 'message',
         fromUserId: data.userId,
         fromUsername: data.user?.username || 'Unknown',
-        fromTankName: data.user?.tankName,
         conversationId: data.conversationId,
         message: data.content,
         timestamp: new Date(),
@@ -207,6 +203,7 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
       }
 
       setNotifications(prev => [notification, ...prev].slice(0, 50))
+      showToast(notification)
     }
 
     chatSocket.on('new-message', onNewMessage)
@@ -214,7 +211,7 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     return () => {
       chatSocket.off('new-message', onNewMessage)
     }
-  }, [])
+  }, [currentUserId, showToast])
 
   const addNotification = useCallback((notification: Omit<ChatNotification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: ChatNotification = {

@@ -17,7 +17,6 @@ interface GameRecord {
 interface UserData {
   id: number
   username: string
-  tankName: string
   tankColor: string
   tankLevel: number
   xp: number
@@ -164,10 +163,6 @@ export default function UserProfileClient({ user, currentUserId }: Props) {
           </div>
 
           <div className="space-y-3">
-            <div className="flex justify-between items-center py-3 border-b border-gray-700">
-              <span className="text-gray-400">Tank Name</span>
-              <span className="text-white font-medium">{user.tankName || 'Default'}</span>
-            </div>
             <div className="flex justify-between items-center py-3 border-b border-gray-700">
               <span className="text-gray-400">Wins</span>
               <span className="text-green-400 font-bold">{user.wins}</span>

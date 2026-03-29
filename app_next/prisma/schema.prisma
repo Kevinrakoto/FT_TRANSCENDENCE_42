@@ -18,7 +18,6 @@ model User {
   isOnline    Boolean @default(false)
   lastSeen    DateTime?
   tankColor   String @default("#00ff00")
-  tankName    String @default("")
   tankLevel   Int    @default(1)
   xp          Int    @default(0)
   wins        Int    @default(0)

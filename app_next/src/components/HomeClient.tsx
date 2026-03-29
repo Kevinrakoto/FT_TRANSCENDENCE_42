@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useEffect } from 'react';
-import { chatSocket } from '@/lib/socket-client';
 import { NavigationBadges } from '@/components/NavigationBadges';
 
 export default function HomeClient() {
@@ -19,9 +18,6 @@ export default function HomeClient() {
     }, [session, status, router]);
 
     const handleLogout = async () => {
-        if (session?.user) {
-            chatSocket.disconnect();
-        }
         await signOut({ redirect: false });
         window.location.href = '/signin';
     };

@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
         username: true,
         email: true,
         avatar: true,
-        tankName: true,
         tankColor: true
       }
     })

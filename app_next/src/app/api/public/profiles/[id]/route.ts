@@ -22,7 +22,6 @@ export async function GET(
       select: {
         id: true,
         username: true,
-        tankName: true,
         tankColor: true,
         tankLevel: true,
         xp: true,
@@ -95,10 +94,9 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { tankName, tankColor } = body;
+    const { tankColor } = body;
 
-    const updates: { tankName?: string; tankColor?: string } = {};
-    if (tankName !== undefined) updates.tankName = tankName;
+    const updates: { tankColor?: string } = {};
     if (tankColor !== undefined) updates.tankColor = tankColor;
 
     const profile = await prisma.user.update({
@@ -107,7 +105,6 @@ export async function PUT(
       select: {
         id: true,
         username: true,
-        tankName: true,
         tankColor: true,
         tankLevel: true,
       },

@@ -86,6 +86,13 @@ export async function POST(req: Request) {
     
         return NextResponse.json({ success: true, message: "Request resent" })
       }
+      if (existing.status === "BLOCKED") {
+        return NextResponse.json(
+          { error: "Cannot send friend request" },
+          { status: 403 }
+        )
+      }
+      }
     }
 
     const friendship = await prisma.friendship.create({
@@ -99,7 +106,6 @@ export async function POST(req: Request) {
           select: {
             id: true,
             username: true,
-            tankName: true,
             tankColor: true
           }
         }

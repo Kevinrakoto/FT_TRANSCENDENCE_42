@@ -2,8 +2,8 @@
 'use client'
 
 import { useEffect, useState, ReactNode, useRef } from 'react'
-import { useSession } from 'next-auth/react'
-import { chatSocket } from '@/lib/socket-client'
+import { useSession, signOut } from 'next-auth/react'
+import { chatSocket, getSocket } from '@/lib/socket-client'
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession()
@@ -14,34 +14,48 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     if (status === 'authenticated' && session?.user?.id && !connectedRef.current) {
       const userId = String(session.user.id)
       const username = session.user.username || ''
-      const tankName = session.user.tankName || ''
       
-      console.log('[SocketProvider] Connecting socket for user:', userId)
-      chatSocket.connect(userId, username, tankName)
+      chatSocket.connect(userId, username)
       connectedRef.current = true
       setIsConnected(true)
     } else if (status === 'unauthenticated' && connectedRef.current) {
-      console.log('[SocketProvider] Disconnecting socket')
       chatSocket.disconnect()
       connectedRef.current = false
       setIsConnected(false)
     }
 
+    const socket = getSocket()
+
+    const onDisconnect = () => {
+      connectedRef.current = false
+      setIsConnected(false)
+    }
+
+    const onForceLogout = (_data: any) => {
+      connectedRef.current = false
+      setIsConnected(false)
+      signOut({ callbackUrl: '/' })
+    }
+
+    socket.on('disconnect', onDisconnect)
+    socket.on('force-logout', onForceLogout)
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && status === 'authenticated' && session?.user?.id && !connectedRef.current) {
-        console.log('[SocketProvider] Reconnecting socket on visibility change')
         chatSocket.connect(
           String(session.user.id),
-          session.user.username || '',
-          session.user.tankName || ''
+          session.user.username || ''
         )
         connectedRef.current = true
+        setIsConnected(true)
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
+      socket.off('disconnect', onDisconnect)
+      socket.off('force-logout', onForceLogout)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [session, status])

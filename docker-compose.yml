@@ -41,8 +41,6 @@ services:
     build:
       context: ./app_next
       dockerfile: Dockerfile.dev
-    ports:
-      - "3000:3000"
     networks:
       - transcendence_net
     volumes:
