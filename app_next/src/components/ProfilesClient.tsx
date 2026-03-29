@@ -108,7 +108,7 @@ export default function ProfilesClient() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="loading-text">LOADING...</div>
       </div>
     )
   }

@@ -67,3 +67,14 @@ export async function emitFriendNotification(
     // Socket may not be connected - safe to ignore
   }
 }
+
+export function emitSocketEvent(event: string, data: Record<string, any>) {
+  try {
+    const io = (global as any).__socketIO
+    if (io) {
+      io.emit(event, data)
+    }
+  } catch {
+    // Socket may not be initialized - safe to ignore
+  }
+}

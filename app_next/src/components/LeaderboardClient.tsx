@@ -218,7 +218,7 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .notification-badge {
           position: absolute;
           top: -5px;

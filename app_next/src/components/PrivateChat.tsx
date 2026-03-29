@@ -193,7 +193,7 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
         </button>
       </form>
 
-      <style jsx>{`
+      <style>{`
         .chat-container {
           display: flex;
           flex-direction: column;

@@ -49,11 +49,11 @@ export default function ChatNotification() {
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] animate-[slideDown_0.3s_ease-out]" onClick={dismissToast}>
           <div className="flex items-center gap-3 bg-gray-900/95 border border-blue-500/50 rounded-xl px-5 py-3 min-w-[300px] max-w-[420px] shadow-2xl backdrop-blur-md cursor-pointer">
             <span className="text-2xl flex-shrink-0">
-              {toast.type === 'friend_request' && '\u{1F464}'}
-              {toast.type === 'friend_accepted' && '\u{2705}'}
-              {toast.type === 'friend_denied' && '\u{274C}'}
-              {toast.type === 'friend_removed' && '\u{1F6AB}'}
-              {toast.type === 'message' && '\u{4E8C}'}
+              {toast.type === 'friend_request' && '👤'}
+              {toast.type === 'friend_accepted' && '✅'}
+              {toast.type === 'friend_denied' && '❌'}
+              {toast.type === 'friend_removed' && '🚫'}
+              {toast.type === 'message' && '💬'}
             </span>
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm">
@@ -220,9 +220,9 @@ export default function ChatNotification() {
                     <div key={notif.id} className="p-3 border-b border-gray-700">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">
-                          {notif.type === 'friend_accepted' && '\u{2705}'}
-                          {notif.type === 'friend_denied' && '\u{274C}'}
-                          {notif.type === 'friend_removed' && '\u{1F6AB}'}
+                          {notif.type === 'friend_accepted' && '✅'}
+                          {notif.type === 'friend_denied' && '❌'}
+                          {notif.type === 'friend_removed' && '🚫'}
                         </span>
                         <div>
                           <p className="text-white text-sm">{notif.message}</p>

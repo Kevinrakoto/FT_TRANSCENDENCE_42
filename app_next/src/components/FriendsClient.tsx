@@ -52,6 +52,7 @@ export default function FriendsClient() {
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends')
   const [processingId, setProcessingId] = useState<number | null>(null)
   const [feedback, setFeedback] = useState<ActionFeedback | null>(null)
+  const [loading, setLoading] = useState(true)
   const { notifications, unreadMessagesCount, refreshFriendRequests, toast, dismissToast } = useChatNotifications()
 
   const showFeedback = useCallback((message: string, type: 'success' | 'error') => {
@@ -79,8 +80,9 @@ export default function FriendsClient() {
   useEffect(() => {
     if (!session?.user) return
 
-    fetchFriends()
-    fetchPendingRequests()
+    Promise.all([fetchFriends(), fetchPendingRequests()]).finally(() => {
+      setLoading(false)
+    })
 
     const onOnlinePlayersUpdate = (players: OnlinePlayer[]) => {
       const onlineIds = new Set(players.map(p => Number(p.userId)))
@@ -225,6 +227,16 @@ export default function FriendsClient() {
     }
   }
 
+  if (loading) {
+    return (
+      <PageLayout title="Friends" backUrl="/home">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' }}>
+          <div className="loading-text">LOADING...</div>
+        </div>
+      </PageLayout>
+    )
+  }
+
   return (
     <PageLayout title="Friends" backUrl="/home">
       {/* Toast notification from real-time events */}
@@ -232,11 +244,11 @@ export default function FriendsClient() {
         <div className="friend-toast" onClick={dismissToast}>
           <div className="friend-toast-content">
             <span className="friend-toast-icon">
-              {toast.type === 'friend_request' && '\u{1F464}'}
-              {toast.type === 'friend_accepted' && '\u2705'}
-              {toast.type === 'friend_denied' && '\u274C'}
-              {toast.type === 'friend_removed' && '\u{1F6AB}'}
-              {toast.type === 'message' && '\u{1F4AC}'}
+              {toast.type === 'friend_request' && '👤'}
+              {toast.type === 'friend_accepted' && '✅'}
+              {toast.type === 'friend_denied' && '❌'}
+              {toast.type === 'friend_removed' && '🚫'}
+              {toast.type === 'message' && '💬'}
             </span>
             <div>
               <p className="friend-toast-title">
@@ -258,7 +270,7 @@ export default function FriendsClient() {
       {/* Action feedback banner */}
       {feedback && (
         <div className={`action-feedback ${feedback.type}`}>
-          <span className="feedback-icon">{feedback.type === 'success' ? '\u2705' : '\u274C'}</span>
+          <span className="feedback-icon">{feedback.type === 'success' ? '✅' : '❌'}</span>
           <span>{feedback.message}</span>
         </div>
       )}
@@ -292,14 +304,14 @@ export default function FriendsClient() {
             className={`friends-tab ${activeTab === 'friends' ? 'active' : ''}`}
             onClick={() => setActiveTab('friends')}
           >
-            <span className="tab-icon">\u{1F465}</span>
+            <span className="tab-icon">👥</span>
             Friends ({friends.length})
           </button>
           <button
             className={`friends-tab ${activeTab === 'requests' ? 'active' : ''}`}
             onClick={() => { setActiveTab('requests'); fetchPendingRequests(); }}
           >
-            <span className="tab-icon">\u{1F4E8}</span>
+            <span className="tab-icon">📨</span>
             Requests
             {pendingRequests.length > 0 && (
               <span className="tab-badge">{pendingRequests.length}</span>
@@ -331,7 +343,7 @@ export default function FriendsClient() {
                       </Link>
                       <p className="friend-status">
                         {friend.isOnline ? (
-                          <span className="status-online">\u25CF Online</span>
+                          <span className="status-online">● Online</span>
                         ) : (
                           <span className="status-offline">
                             Last seen {friend.lastSeen ? formatDate(friend.lastSeen) : 'unknown'}
@@ -375,7 +387,7 @@ export default function FriendsClient() {
               </div>
             ) : (
               <div className="empty-state">
-                <p className="empty-icon">{"\u{1F465}"}</p>
+                <p className="empty-icon">👥</p>
                 <p className="empty-title">No friends yet</p>
                 <p className="empty-desc">Search for players above to add them!</p>
               </div>
@@ -430,7 +442,7 @@ export default function FriendsClient() {
               </div>
             ) : (
               <div className="empty-state">
-                <p className="empty-icon">{"\u{1F4E8}"}</p>
+                <p className="empty-icon">📨</p>
                 <p className="empty-title">No pending requests</p>
                 <p className="empty-desc">When someone sends you a friend request, it will appear here.</p>
               </div>
@@ -439,7 +451,7 @@ export default function FriendsClient() {
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .action-feedback {
           display: flex;
           align-items: center;

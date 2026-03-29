@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { emitSocketEvent } from '@/lib/notifications'
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,6 +67,11 @@ export async function POST(request: NextRequest) {
         avatar: true,
         tankColor: true
       }
+    })
+
+    emitSocketEvent('user-profile-updated', {
+      userId: session.user.id,
+      avatar: avatarUrl,
     })
 
     return NextResponse.json({ 

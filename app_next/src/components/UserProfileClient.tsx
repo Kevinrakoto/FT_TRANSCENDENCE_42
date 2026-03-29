@@ -218,13 +218,6 @@ export default function UserProfileClient({ user, currentUserId }: Props) {
         )}
 
         <div className="flex gap-3">
-          <button
-            onClick={handleSendFriendRequest}
-            disabled={addingFriend || friendStatus !== null}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors"
-          >
-            {friendStatus || (addingFriend ? 'Sending...' : 'Add Friend')}
-          </button>
           <Link
             href="/home"
             className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium text-center transition-colors"

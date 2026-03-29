@@ -156,7 +156,7 @@ export default function FriendRequestButton({ username, onRequestSent, onUserSel
               </div>
               <div className="frb-suggestion-info">
                 <p className="frb-suggestion-name">{user.username}</p>
-                {user.isOnline && <span className="frb-suggestion-online">\u25CF Online</span>}
+                {user.isOnline && <span className="frb-suggestion-online">● Online</span>}
               </div>
               {user.friendshipStatus === 'friends' && (
                 <span className="frb-badge frb-badge-friends">Friends</span>
@@ -172,7 +172,7 @@ export default function FriendRequestButton({ username, onRequestSent, onUserSel
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .frb-status {
           font-size: 12px;
           font-weight: 600;

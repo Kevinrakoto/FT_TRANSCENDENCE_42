@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from '@/lib/prisma'
+import { emitSocketEvent } from '@/lib/notifications'
 
 const db = prisma
 
@@ -34,6 +35,13 @@ export async function PUT(request: NextRequest) {
         gamesAsPlayer: true
       }
     })
+
+    if (username) {
+      emitSocketEvent('user-profile-updated', {
+        userId: session.user.id,
+        username,
+      })
+    }
 
     return NextResponse.json({ user })
   } catch (error) {

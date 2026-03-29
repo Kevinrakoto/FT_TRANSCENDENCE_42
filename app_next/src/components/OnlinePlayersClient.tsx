@@ -110,7 +110,11 @@ export default function OnlinePlayersClient() {
     setNewMessage('');
   };
 
-  if (!currentUser) return <div>Loading...</div>;
+  if (!currentUser) return (
+    <div className="game-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="loading-text">LOADING...</div>
+    </div>
+  );
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
