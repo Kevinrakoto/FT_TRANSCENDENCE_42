@@ -1,6 +1,10 @@
-'use client';
-
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Select Game Mode',
+  description: 'Choose your game mode in Tank Battle. Play solo against AI bots or challenge real players in multiplayer battles.',
+}
 
 export default function GameModePage() {
   return (
@@ -57,24 +61,6 @@ export default function GameModePage() {
             </div>
           </Link>
         </div>
-
-        {/* <div className="mode-selection-footer">
-          <div className="stat-item">
-            <span className="stat-icon">👤</span>
-            <span className="stat-label">Players Online</span>
-            <span className="stat-value">1,234</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-icon">🎮</span>
-            <span className="stat-label">Games Today</span>
-            <span className="stat-value">5,678</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-icon">⚔️</span>
-            <span className="stat-label">Active Battles</span>
-            <span className="stat-value">89</span>
-          </div>
-        </div> */}
       </div>
     </div>
   );

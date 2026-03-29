@@ -37,14 +37,13 @@ export function useChatSocket({ conversationId, currentUser, otherUserId, otherU
     const socket = getSocket()
     
     const handleConnect = () => {
-      console.log('[Chat] Socket connected, joining room:', conversationIdRef.current)
       socket.emit('join-private-room', { conversationId: String(conversationIdRef.current), userId: userIdStr })
       socket.emit('request-online-players', {})
       setIsConnected(true)
     }
 
     if (!isConnectedRef.current) {
-      chatSocket.connect(userIdStr, currentUser.username, currentUser.tankName)
+      chatSocket.connect(userIdStr, currentUser.username)
       isConnectedRef.current = true
       
       if (socket.connected) {
@@ -116,11 +115,8 @@ export function useChatSocket({ conversationId, currentUser, otherUserId, otherU
     chatSocket.on('online-players-update', onOnlinePlayersUpdate)
     chatSocket.on('user-typing', onUserTyping)
 
-    chatSocket.on('user-profile-updated', (data: { userId: number; avatar?: string; tankName?: string; tankColor?: string; username?: string }) => {
-      console.log('[Chat] Profile updated:', data)
-    })
-
     return () => {
+      isConnectedRef.current = false
       chatSocket.emit('leave-private-room', { conversationId: String(conversationIdRef.current) })
       chatSocket.off('new-message', onNewMessage)
       chatSocket.off('user-joined', onUserJoined)
@@ -131,11 +127,10 @@ export function useChatSocket({ conversationId, currentUser, otherUserId, otherU
         clearTimeout(typingTimeoutRef.current)
       }
     }
-  }, [conversationId, currentUser.id, otherUserId, otherUserInitialOnline, currentUser.username, currentUser.tankName])
+  }, [conversationId, currentUser.id, otherUserId, otherUserInitialOnline, currentUser.username])
 
   const sendMessage = useCallback((content: string) => {
     if (!content.trim()) return
-    console.log('[Chat] Sending message:', { conversationId, content, userId: currentUser.id })
     chatSocket.sendPrivateMessage(String(conversationId), content, String(currentUser.id))
   }, [conversationId, currentUser.id])
 

@@ -1,10 +1,16 @@
 // src/app/chat/[userId]/page.tsx
+import type { Metadata } from 'next'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import PrivateChat from '@/components/PrivateChat'
 import PageLayout from '@/components/PageLayout'
+
+export const metadata: Metadata = {
+  title: 'Chat',
+  description: 'Private chat conversation in Tank Battle.',
+}
 
 interface Props {
   params: {
@@ -60,7 +66,6 @@ export default async function ChatPage({ params, searchParams }: Props) {
       id: true,
       username: true,
       avatar: true,
-      tankName: true,
       tankColor: true,
       isOnline: true
     }
@@ -74,7 +79,6 @@ export default async function ChatPage({ params, searchParams }: Props) {
     id: currentUserId,
     username: session.user.username,
     avatar: session.user.avatar,
-    tankName: session.user.tankName || '',
     tankColor: session.user.tankColor || '#00ff00'
   }
 

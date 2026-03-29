@@ -1,5 +1,3 @@
-// const { PrismaClient } = require('@prisma/client');
-// const prisma = new PrismaClient();
 
 const lobbies = {
 	2: [],
@@ -15,10 +13,11 @@ module.exports = (io) => {
     gameNamespace.on('connection', (socket) => {
 
 		const username = socket.handshake.auth.username;
-
+		const tankColor = socket.handshake.auth.tankColor;
 		const gameMode = parseInt(socket.handshake.auth.gameMode || 2);
 
 		socket.data.username = username;
+		socket.data.tankColor = tankColor;
 
 		lobbies[gameMode].push(socket);
 
@@ -30,29 +29,54 @@ module.exports = (io) => {
         });
 
         if (lobbies[gameMode].length >= gameMode) {
-            const matchPlayers = lobbies[gameMode].splice(0, gameMode);
-			const playerNames = matchPlayers.map(p => p.data.username);
+			const originalMatchPlayers = lobbies[gameMode].slice(0, gameMode);
+            let matchPlayers = [...originalMatchPlayers];
+			const playerNames = originalMatchPlayers.map(p => p.data.username);
+			const playerColors = originalMatchPlayers.map(p => p.data.tankColor);
             const mapNames = ['one', 'two', 'three'];
             const randomMap = mapNames[Math.floor(Math.random() * mapNames.length)];
             console.log("Starting match on map:", randomMap);
 
-			matchPlayers.forEach(p => {
+			originalMatchPlayers.forEach(p => {
 				p.data.score = 0;
 			});
 
-            matchPlayers.forEach((playerSocket, index) => {
+            originalMatchPlayers.forEach((playerSocket, index) => {
                 const playerNumber = index + 1;
                
-				const initialLeaderboard = matchPlayers.map( p => ({
-					playerNumber: matchPlayers.indexOf(p) + 1,
+				const initialLeaderboard = originalMatchPlayers.map( p => ({
+					playerNumber: originalMatchPlayers.indexOf(p) + 1,
 					username: p.data.username,
 					score: 0
 				}));
 
+				playerSocket.on('disconnect', () => {
+					matchPlayers = matchPlayers.filter(p => p.id !== playerSocket.id);
+
+					const leaderboard = matchPlayers.map( p => ({
+						playerNumber: originalMatchPlayers.indexOf(p) + 1,
+						username: p.data.username,
+						score: p.data.score
+					}));
+
+					matchPlayers.forEach( (other) => {
+						other.emit('playerDisconnected', {
+							playerNumber: playerNumber
+						});
+						other.emit('leaderboardUpdate', leaderboard);
+					});
+
+					if (matchPlayers.length === 1) {
+						matchPlayers[0].emit('gameOver', {
+							leaderboard: leaderboard
+						});
+					}
+				});
                 playerSocket.emit('gameStart', {
                     map: randomMap,
                     myPlayerNumber: playerNumber,
 					playerNames: playerNames,
+					playerColors: playerColors,
                     numberOfPlayer: gameMode
                 });
 				playerSocket.emit('leaderboardUpdate', initialLeaderboard);
@@ -113,7 +137,7 @@ module.exports = (io) => {
 					});
 				});
 				playerSocket.on('playerDied', (data) => {
-					const playerSocket = matchPlayers[data.number - 1];
+					const playerSocket = originalMatchPlayers[data.number - 1];
 					playerSocket.data.score += 1;
 					console.log(playerSocket.data.username, "score:", playerSocket.data.score);
 					const leaderboard = matchPlayers.map( p => ({
@@ -126,6 +150,13 @@ module.exports = (io) => {
 						p.emit('leaderboardUpdate', leaderboard);
 					});
 
+					if (playerSocket.data.score >= 5) {
+						matchPlayers.forEach( p => {
+							p.emit('gameOver', {
+								leaderboard: leaderboard
+							});
+						});
+					}
 				});
 				playerSocket.on('reload', () => {
 					matchPlayers.forEach((other) => {
@@ -137,33 +168,11 @@ module.exports = (io) => {
 					});
 				});
 			});
-
-			let timer = 300;
-
-			const matchTimer = setInterval(() => {
-				--timer;
-				matchPlayers.forEach((playerSocket) => {
-					playerSocket.emit('timeUpdate', { seconds: timer });
-				});
-
-				if (timer <= 0) {
-					clearInterval(matchTimer);
-					const leaderboard = matchPlayers.map( p => ({
-						playerNumber: matchPlayers.indexOf(p) + 1,
-						username: p.data.username,
-						score: p.data.score
-					}));
-					matchPlayers.forEach((playerSocket) => {
-						playerSocket.emit('gameOver', leaderboard);
-					});
-				}
-			}, 1000);
-		}
-        else {
+		} else {
             socket.emit('waiting', {
 				current: lobbies[gameMode].length,
 				required: gameMode
 			});
-        }
+    	}
     });
 };

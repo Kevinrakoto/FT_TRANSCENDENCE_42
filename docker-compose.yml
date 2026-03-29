@@ -37,19 +37,10 @@ services:
     depends_on:
       - vault
 
-  redis:
-    image: redis:7-alpine
-    networks:
-      - transcendence_net
-    volumes:
-      - redis_data:/data
-
   app:
     build:
       context: ./app_next
       dockerfile: Dockerfile.dev
-    ports:
-      - "3000:3000"
     networks:
       - transcendence_net
     volumes:
@@ -57,13 +48,8 @@ services:
       - /app/node_modules
       - vault_secrets:/vault/config:ro
       - ssl_certs:/app/certificates:ro
-    env_file:
-      - .env
-    environment:
-      REDIS_URL: redis://redis:6379
     depends_on:
       - postgres
-      - redis
       - vault
 
 networks:
@@ -74,5 +60,4 @@ volumes:
   vault_secrets:
   vault_data:
   postgres_data:
-  redis_data:
   ssl_certs:

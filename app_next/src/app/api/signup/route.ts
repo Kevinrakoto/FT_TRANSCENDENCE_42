@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, email, password, tankColor, tankName } = body;
+    const { username, email, password, tankColor } = body;
 
-    // Validation des données
     if (!username || !email || !password) {
       return NextResponse.json(
          { error: 'All fields are required' },
@@ -17,7 +14,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Vérifier si l'utilisateur existe déjà
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [{ email }, { username }],
@@ -31,24 +27,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hasher le mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Créer l'utilisateur dans la base de données
     const user = await prisma.user.create({
       data: {
         username,
         email,
         password: hashedPassword,
         tankColor,
-        tankName: tankName || `Tank_${username}`,
       },
       select: {
         id: true,
         username: true,
         email: true,
         tankColor: true,
-        tankName: true,
       },
     });
 
@@ -56,7 +48,7 @@ export async function POST(request: NextRequest) {
       { 
          message: 'Account created successfully',
         user,
-        redirect: '/login'
+        redirect: '/signin'
       },
       { status: 201 }
     );

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { createNotification } from "@/lib/notifications"
+import { createNotification, emitFriendNotification } from "@/lib/notifications"
 
 export async function POST(req: Request) {
   try {
@@ -76,8 +76,21 @@ export async function POST(req: Request) {
           `${sender?.username || 'A user'} sent you a friend request`,
           { senderId, friendshipId: existing.id }
         )
+
+        await emitFriendNotification(receiver.id, 'friend-notification', {
+          type: 'friend_request',
+          friendshipId: existing.id,
+          fromUserId: senderId,
+          fromUsername: sender?.username,
+        })
     
         return NextResponse.json({ success: true, message: "Request resent" })
+      }
+      if (existing.status === "BLOCKED") {
+        return NextResponse.json(
+          { error: "Cannot send friend request" },
+          { status: 403 }
+        )
       }
     }
 
@@ -92,7 +105,6 @@ export async function POST(req: Request) {
           select: {
             id: true,
             username: true,
-            tankName: true,
             tankColor: true
           }
         }
@@ -111,6 +123,13 @@ export async function POST(req: Request) {
       `${sender?.username || 'A user'} sent you a friend request`,
       { senderId, friendshipId: friendship.id }
     )
+
+    await emitFriendNotification(receiver.id, 'friend-notification', {
+      type: 'friend_request',
+      friendshipId: friendship.id,
+      fromUserId: senderId,
+      fromUsername: sender?.username,
+    })
 
     return NextResponse.json(friendship)
   } catch (error) {

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
-const db = new PrismaClient();
+const db = prisma;
 
 export async function GET(request: NextRequest) {
   try {
@@ -100,6 +100,56 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating notifications:', error);
     return NextResponse.json(
       { error: 'Failed to update notifications' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const userId = session.user.id;
+    const body = await request.json().catch(() => ({}));
+    const { notificationId, clearAll } = body;
+
+    if (clearAll) {
+      await db.notification.deleteMany({
+        where: { userId },
+      });
+    } else if (notificationId) {
+      await db.notification.deleteMany({
+        where: {
+          id: Number(notificationId),
+          userId,
+        },
+      });
+    } else {
+      return NextResponse.json(
+        { error: 'notificationId or clearAll is required' },
+        { status: 400 }
+      );
+    }
+
+    const unreadCount = await db.notification.count({
+      where: { userId, isRead: false },
+    });
+
+    return NextResponse.json({
+      message: 'Notification(s) deleted',
+      unreadCount,
+    });
+  } catch (error) {
+    console.error('Error deleting notifications:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete notifications' },
       { status: 500 }
     );
   }

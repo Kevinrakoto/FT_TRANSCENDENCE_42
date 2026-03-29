@@ -31,19 +31,35 @@ export const authOptions: NextAuthOptions = {
            throw new Error("Incorrect password")
         }
 
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { isOnline: true, lastSeen: new Date() }
-      })
-      
-      return {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        avatar: user.avatar,
-        tankName: user.tankName,
-        tankColor: user.tankColor
-      }
+        // If user is already online, force the old session to disconnect
+        if (user.isOnline) {
+          try {
+            const https = await import('https')
+            const agent = new https.Agent({ rejectUnauthorized: false })
+            await fetch('https://localhost:3000/api/force-logout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: user.id }),
+              // @ts-ignore - Node.js fetch supports agent
+              agent,
+            })
+          } catch (e) {
+            // Old session may not have an active socket - safe to ignore
+          }
+        }
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { isOnline: true, lastSeen: new Date() }
+        })
+        
+        return {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          avatar: user.avatar,
+          tankColor: user.tankColor
+        }
       }
     })
   ],
@@ -53,7 +69,6 @@ export const authOptions: NextAuthOptions = {
         token.id = Number(user.id)
         token.username = user.username
         token.avatar = user.avatar
-        token.tankName = user.tankName
         token.tankColor = user.tankColor
       }
       return token
@@ -65,7 +80,6 @@ export const authOptions: NextAuthOptions = {
           id: token.id,
           username: token.username,
           avatar: token.avatar,
-          tankName: token.tankName,
           tankColor: token.tankColor
         }
       }
@@ -76,7 +90,6 @@ export const authOptions: NextAuthOptions = {
      async signOut({ token }) {
        if (token?.id) {
          try {
-           const { prisma } = await import('@/lib/prisma')
            await prisma.user.update({
              where: { id: token.id },
              data: { isOnline: false, lastSeen: new Date() }

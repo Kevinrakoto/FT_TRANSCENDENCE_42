@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const db = new PrismaClient();
+const db = prisma;
 
 export async function GET(
   request: NextRequest,
@@ -30,7 +30,6 @@ export async function GET(
           select: {
             id: true,
             username: true,
-            tankName: true,
             tankLevel: true,
             wins: true,
             isOnline: true,
@@ -41,7 +40,6 @@ export async function GET(
           select: {
             id: true,
             username: true,
-            tankName: true,
             tankLevel: true,
             wins: true,
             isOnline: true,

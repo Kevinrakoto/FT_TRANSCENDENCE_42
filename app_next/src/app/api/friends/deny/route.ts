@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { createNotification } from "@/lib/notifications"
+import { createNotification, emitFriendNotification } from "@/lib/notifications"
 
 export async function POST(req: Request) {
   try {
@@ -33,11 +33,6 @@ export async function POST(req: Request) {
       )
     }
 
-    const sender = await prisma.user.findUnique({
-      where: { id: friendship.senderId },
-      select: { username: true, tankName: true }
-    })
-
     const receiver = await prisma.user.findUnique({
       where: { id: userId },
       select: { username: true }
@@ -55,6 +50,12 @@ export async function POST(req: Request) {
       `${receiver?.username || 'A user'} declined your friend request`,
       { senderId: userId }
     )
+
+    await emitFriendNotification(friendship.senderId, 'friend-notification', {
+      type: 'friend_denied',
+      fromUserId: userId,
+      fromUsername: receiver?.username,
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -7,11 +7,11 @@ import { chatSocket } from '@/lib/socket-client'
 
 export interface ChatNotification {
   id: string
-  type: 'message' | 'friend_request'
+  type: 'message' | 'friend_request' | 'friend_accepted' | 'friend_denied' | 'friend_removed'
   fromUserId: number
   fromUsername: string
-  fromTankName?: string
   conversationId?: number
+  friendshipId?: number
   message?: string
   timestamp: Date
   read: boolean
@@ -22,6 +22,8 @@ interface ChatNotificationsContextType {
   unreadCount: number
   unreadMessagesCount: number
   unreadFriendRequestsCount: number
+  toast: ChatNotification | null
+  dismissToast: () => void
   addNotification: (notification: Omit<ChatNotification, 'id' | 'timestamp' | 'read'>) => void
   markAsRead: (id: string) => void
   markAllAsRead: () => void
@@ -44,6 +46,8 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
   const { data: session, status } = useSession()
   const [notifications, setNotifications] = useState<ChatNotification[]>([])
   const [friendRequestsCount, setFriendRequestsCount] = useState(0)
+  const [toast, setToast] = useState<ChatNotification | null>(null)
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null)
   const currentUserId = session?.user?.id ? Number(session.user.id) : undefined
   const currentUserIdRef = useRef(currentUserId)
   const isSessionLoaded = status !== 'loading'
@@ -52,14 +56,23 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     currentUserIdRef.current = currentUserId
   }, [currentUserId])
 
+  const showToast = useCallback((notification: ChatNotification) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToast(notification)
+    toastTimerRef.current = setTimeout(() => setToast(null), 5000)
+  }, [])
+
+  const dismissToast = useCallback(() => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToast(null)
+  }, [])
+
   const refreshFriendRequests = useCallback(async () => {
     if (!currentUserIdRef.current) return
     try {
-      console.log('[ChatNotifications] Refreshing friend requests for user:', currentUserIdRef.current)
       const res = await fetch('/api/friends/pending')
       if (res.ok) {
         const data = await res.json()
-        console.log('[ChatNotifications] Friend requests:', data.length)
         setFriendRequestsCount(data.length)
         
         setNotifications(prev => {
@@ -71,7 +84,7 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
               type: 'friend_request',
               fromUserId: req.sender.id,
               fromUsername: req.sender.username,
-              fromTankName: req.sender.tankName,
+              friendshipId: req.id,
               timestamp: new Date(req.createdAt),
               read: false,
             }))
@@ -86,10 +99,9 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
   useEffect(() => {
     if (!isSessionLoaded || !currentUserId) return
     
-    console.log('[ChatNotifications] Setting up for user:', currentUserId)
     refreshFriendRequests()
     
-    const interval = setInterval(refreshFriendRequests, 5000)
+    const interval = setInterval(refreshFriendRequests, 10000)
     
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -104,20 +116,86 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     }
   }, [isSessionLoaded, currentUserId, refreshFriendRequests])
 
+  // Real-time friend notification listener
   useEffect(() => {
-    if (!currentUserIdRef.current) return
+    if (!currentUserId) return
+
+    function onFriendNotification(data: any) {
+      if (!currentUserIdRef.current) return
+
+      if (data.type === 'friend_request') {
+        const notification: ChatNotification = {
+          id: `fr-realtime-${data.friendshipId || Date.now()}`,
+          type: 'friend_request',
+          fromUserId: data.fromUserId,
+          fromUsername: data.fromUsername || 'Someone',
+          friendshipId: data.friendshipId,
+          timestamp: new Date(),
+          read: false,
+        }
+        setNotifications(prev => [notification, ...prev.filter(n => n.id !== notification.id)].slice(0, 50))
+        setFriendRequestsCount(prev => prev + 1)
+        showToast(notification)
+        refreshFriendRequests()
+      } else if (data.type === 'friend_accepted') {
+        const notification: ChatNotification = {
+          id: `fa-${data.fromUserId}-${Date.now()}`,
+          type: 'friend_accepted',
+          fromUserId: data.fromUserId,
+          fromUsername: data.fromUsername || 'Someone',
+          conversationId: data.conversationId,
+          message: `${data.fromUsername || 'Someone'} accepted your friend request`,
+          timestamp: new Date(),
+          read: false,
+        }
+        setNotifications(prev => [notification, ...prev].slice(0, 50))
+        showToast(notification)
+      } else if (data.type === 'friend_denied') {
+        const notification: ChatNotification = {
+          id: `fd-${data.fromUserId}-${Date.now()}`,
+          type: 'friend_denied',
+          fromUserId: data.fromUserId,
+          fromUsername: data.fromUsername || 'Someone',
+          message: `${data.fromUsername || 'Someone'} declined your friend request`,
+          timestamp: new Date(),
+          read: false,
+        }
+        setNotifications(prev => [notification, ...prev].slice(0, 50))
+        showToast(notification)
+      } else if (data.type === 'friend_removed') {
+        const notification: ChatNotification = {
+          id: `fr-removed-${data.fromUserId}-${Date.now()}`,
+          type: 'friend_removed',
+          fromUserId: data.fromUserId,
+          fromUsername: 'Someone',
+          message: 'A user removed you from their friends list',
+          timestamp: new Date(),
+          read: false,
+        }
+        setNotifications(prev => [notification, ...prev].slice(0, 50))
+        showToast(notification)
+      }
+    }
+
+    chatSocket.on('friend-notification', onFriendNotification)
+
+    return () => {
+      chatSocket.off('friend-notification', onFriendNotification)
+    }
+  }, [currentUserId, showToast, refreshFriendRequests])
+
+  useEffect(() => {
+    if (!currentUserId) return
 
     function onNewMessage(data: any) {
       const userId = currentUserIdRef.current
       if (!userId || data.userId === userId) return
 
-      console.log('[ChatNotifications] New message received:', data)
       const notification: ChatNotification = {
         id: `msg-${data.id}-${Date.now()}`,
         type: 'message',
         fromUserId: data.userId,
         fromUsername: data.user?.username || 'Unknown',
-        fromTankName: data.user?.tankName,
         conversationId: data.conversationId,
         message: data.content,
         timestamp: new Date(),
@@ -125,6 +203,7 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
       }
 
       setNotifications(prev => [notification, ...prev].slice(0, 50))
+      showToast(notification)
     }
 
     chatSocket.on('new-message', onNewMessage)
@@ -132,7 +211,7 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     return () => {
       chatSocket.off('new-message', onNewMessage)
     }
-  }, [])
+  }, [currentUserId, showToast])
 
   const addNotification = useCallback((notification: Omit<ChatNotification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: ChatNotification = {
@@ -144,22 +223,64 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     setNotifications(prev => [newNotification, ...prev].slice(0, 50))
   }, [])
 
-  const markAsRead = useCallback((id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     setNotifications(prev => 
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     )
+    const numericId = id.replace(/^[a-z]+-/, '').split('-')[0]
+    if (!isNaN(Number(numericId))) {
+      try {
+        await fetch('/api/me/notifications', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationIds: [Number(numericId)] }),
+        })
+      } catch (error) {
+        console.error('[ChatNotifications] Error marking as read:', error)
+      }
+    }
   }, [])
 
-  const markAllAsRead = useCallback(() => {
+  const markAllAsRead = useCallback(async () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    try {
+      await fetch('/api/me/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAllRead: true }),
+      })
+    } catch (error) {
+      console.error('[ChatNotifications] Error marking all as read:', error)
+    }
   }, [])
 
-  const removeNotification = useCallback((id: string) => {
+  const removeNotification = useCallback(async (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id))
+    const numericId = id.replace(/^[a-z]+-/, '').split('-')[0]
+    if (!isNaN(Number(numericId))) {
+      try {
+        await fetch('/api/me/notifications', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationId: Number(numericId) }),
+        })
+      } catch (error) {
+        console.error('[ChatNotifications] Error deleting notification:', error)
+      }
+    }
   }, [])
 
-  const clearAll = useCallback(() => {
+  const clearAll = useCallback(async () => {
     setNotifications([])
+    try {
+      await fetch('/api/me/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clearAll: true }),
+      })
+    } catch (error) {
+      console.error('[ChatNotifications] Error clearing all notifications:', error)
+    }
   }, [])
 
   const unreadMessagesCount = notifications.filter(n => !n.read && n.type === 'message').length
@@ -172,6 +293,8 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
       unreadCount,
       unreadMessagesCount,
       unreadFriendRequestsCount,
+      toast,
+      dismissToast,
       addNotification,
       markAsRead,
       markAllAsRead,

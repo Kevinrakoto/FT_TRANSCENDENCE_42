@@ -400,4 +400,16 @@
   color: rgba(255,255,255,0.3);
   font-size: 0.8rem;
   z-index: 10;
+  text-align: center;
+}
+
+.vector-footer a {
+  color: rgba(0, 217, 255, 0.6);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.vector-footer a:hover {
+  color: rgba(0, 217, 255, 1);
+  text-decoration: underline;
 }

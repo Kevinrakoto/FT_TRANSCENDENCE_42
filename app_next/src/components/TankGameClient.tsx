@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 
-export default function TankGamePage() {
+export default function TankGameClient() {
   const {data : session, status} = useSession();
   const router = useRouter();
   const [webGLReady, setWebGLReady] = useState(false);
@@ -24,7 +24,7 @@ export default function TankGamePage() {
     } catch (e) {
       return;
     }
-  import('./scripts/game.js').then(() => console.log('game script loaded'));
+  import('@/app/(app)/tank-game/scripts/game.js').then(() => console.log('game script loaded'));
 }, [session, status, router]);
 
   return (
