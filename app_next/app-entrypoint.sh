@@ -20,4 +20,8 @@ done
 
 echo "Database ready. Starting app..."
 
-exec npm run dev
+if [ "$NODE_ENV" = "production" ]; then
+  exec npm run start
+else
+  exec npm run dev
+fi

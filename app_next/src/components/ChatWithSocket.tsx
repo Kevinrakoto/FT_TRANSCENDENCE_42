@@ -18,14 +18,12 @@ export function useChatSocket({ conversationId, currentUser }: UseChatSocketProp
   useEffect(() => {
     function onConnect() {
       setIsConnected(true)
-      console.log('Socket connected')
       socket.emit('authenticate', currentUser.id)
       socket.emit('join-private-room', { conversationId, userId: currentUser.id })
     }
 
     function onDisconnect() {
       setIsConnected(false)
-      console.log('Socket disconnected')
     }
 
     function onNewMessage(message: Message) {
@@ -50,7 +48,7 @@ export function useChatSocket({ conversationId, currentUser }: UseChatSocketProp
       }
     }
 
-    // Si le socket est déjà connecté, on exécute immédiatement les émissions nécessaires
+    // If socket is already connected, immediately execute the necessary emissions
     if (socket.connected) {
       socket.emit('authenticate', currentUser.id)
       socket.emit('join-private-room', { conversationId, userId: currentUser.id })
@@ -92,7 +90,6 @@ export function useChatSocket({ conversationId, currentUser }: UseChatSocketProp
       user: {
         id: currentUser.id,
         username: currentUser.username,
-        tankName: currentUser.tankName,
         tankColor: currentUser.tankColor
       }
     })

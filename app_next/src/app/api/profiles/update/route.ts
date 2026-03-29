@@ -1,10 +1,10 @@
 // src/app/api/profiles/update/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { prisma } from '@/lib/prisma'
 
-const db = new PrismaClient()
+const db = prisma
 
 export async function PUT(request: NextRequest) {
   try {
@@ -18,20 +18,18 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { username, tankName } = body
+    const { username } = body
 
     const user = await db.user.update({
       where: { id: session.user.id },
       data: {
         ...(username && { username }),
-        ...(tankName && { tankName })
       },
       select: {
         id: true,
         email: true,
         username: true,
         avatar: true,
-        tankName: true,
         tankLevel: true,
         gamesAsPlayer: true
       }

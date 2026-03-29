@@ -13,7 +13,11 @@ export default function SignInForm() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState(queryError === 'already_connected' ? 'This account is already logged in from another session.' : '')
+  const [error, setError] = useState(() => {
+    if (queryError === 'session_replaced') return 'Your session was ended because another device logged into this account.'
+    if (queryError === 'already_connected') return 'This account is already logged in from another session.'
+    return ''
+  })
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {

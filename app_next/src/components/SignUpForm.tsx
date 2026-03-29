@@ -30,7 +30,7 @@ export default function SignUpForm() {
       return;
     }
 
-    setLoading(false);
+    setLoading(true);
 
     try {
       const response = await fetch('/api/signup', {
@@ -52,7 +52,6 @@ export default function SignUpForm() {
       router.push('/signin?registered=true');
 
     } catch (err: any) {
-      console.log('Signup data:', formData);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -68,14 +67,14 @@ export default function SignUpForm() {
       <div className="vector-card">
         <div className="card-illustration">
           <div className='card-title-wrapper'>
-            <h1 className="vector-title">INSCRIPTION</h1>
+            <h1 className="vector-title">SIGN UP</h1>
           </div>
         </div>
         <div className='card-body'>
           <form onSubmit={handleSubmit} className="auth-form">
 
             <div className="form-group">
-              <label htmlFor="username" className="form-label"> Pseudo</label>
+              <label htmlFor="username" className="form-label"> Username</label>
               <input
                 type="text"
                 id="username"
@@ -85,7 +84,7 @@ export default function SignUpForm() {
                 placeholder="TANKER_90"
                 required
                 pattern="[A-Za-z0-9_]{3,20}"
-                title="3-20 caractères, lettres, chiffres et _"
+                title="3-20 characters, letters, digits and _"
               />
             </div>
 
@@ -140,7 +139,7 @@ export default function SignUpForm() {
               className="submit-button"
               disabled={loading}
             >
-              {loading ? 'CHARGEMENT...' : 'CREATE'}
+              {loading ? 'LOADING...' : 'CREATE'}
             </button>
 
             <p className="legal-consent">

@@ -55,7 +55,7 @@ export default function FriendRequestsList() {
       {requests.map(request => (
         <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
           <div>
-            <p className="font-semibold">{request.sender.tankName || request.sender.username}</p>
+            <p className="font-semibold">{request.sender.username}</p>
             <p className="text-sm text-gray-500">@{request.sender.username}</p>
           </div>
           <div className="flex gap-2">

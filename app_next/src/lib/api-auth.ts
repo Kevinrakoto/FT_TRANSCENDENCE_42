@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getApiKey } from './rate-limit';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const db = new PrismaClient();
+const db = prisma;
 
 export async function verifyApiKey(req: NextRequest): Promise<{ valid: boolean; error?: string; keyId?: number; userId?: number }> {
   const apiKey = getApiKey(req);

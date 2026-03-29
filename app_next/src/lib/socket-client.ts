@@ -3,10 +3,11 @@
 
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXTAUTH_URL || 'https://localhost:3000';
+const SOCKET_URL = process.env.NEXTAUTH_URL || 'https://localhost:8443';
 
 let socketInstance: Socket | null = null;
 let currentSocketUserId: string | null = null;
+let currentSocketUsername: string | null = null;
 let isSocketInitialized = false;
 
 function initializeSocket(): Socket {
@@ -28,12 +29,10 @@ function initializeSocket(): Socket {
   });
 
   socketInstance.on('connect', () => {
-    console.log('[SOCKET] Connecté → ID:', socketInstance?.id);
     if (currentSocketUserId) {
       socketInstance?.emit('join-game', { 
         userId: currentSocketUserId,
-        username: '',
-        tankName: ''
+        username: currentSocketUsername || '',
       });
     }
   });
@@ -42,15 +41,14 @@ function initializeSocket(): Socket {
     console.error('[SOCKET] Connection error:', err.message);
   });
 
-  socketInstance.on('disconnect', (reason) => {
-    console.log('[SOCKET] Disconnected → reason:', reason);
+  socketInstance.on('disconnect', (_reason) => {
   });
 
-  socketInstance.on('dbl_connex', (data) => {
-    console.warn('[SOCKET] Double connection detected:', data.message);
+  // When another session takes over this account
+  socketInstance.on('force-logout', (_data) => {
     currentSocketUserId = null;
     import('next-auth/react').then(({ signOut }) => {
-      signOut({ callbackUrl: '/signin?error=already_connected' });
+      signOut({ callbackUrl: '/' });
     });
   });
 
@@ -71,6 +69,7 @@ export function disconnectSocket() {
     socketInstance = null;
   }
   currentSocketUserId = null;
+  currentSocketUsername = null;
 }
 
 export function getCurrentUserId(): string | null {
@@ -78,18 +77,18 @@ export function getCurrentUserId(): string | null {
 }
 
 export const chatSocket = {
-  connect: (userId: string, username?: string, tankName?: string) => {
+  connect: (userId: string, username?: string) => {
     if (!userId) return;
     
     currentSocketUserId = userId;
+    currentSocketUsername = username || '';
     
     const socket = getSocket();
     
     const emitJoinGame = () => {
       socket.emit('join-game', { 
         userId, 
-        username: username || '', 
-        tankName: tankName || '' 
+        username: currentSocketUsername, 
       });
     };
 
@@ -160,7 +159,7 @@ export const chatSocket = {
     getSocket().off(event, callback);
   },
 
-  updateProfile: (userId: number, updates: { avatar?: string; tankName?: string; tankColor?: string; username?: string }) => {
+  updateProfile: (userId: number, updates: { avatar?: string; tankColor?: string; username?: string }) => {
     const socket = getSocket();
     if (socket.connected) {
       socket.emit('profile-update', { userId, updates });

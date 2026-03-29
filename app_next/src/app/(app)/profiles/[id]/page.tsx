@@ -15,14 +15,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { username: true, tankName: true },
+    select: { username: true },
   })
 
   if (!user) return { title: 'Profile Not Found' }
 
   return {
     title: `${user.username} - Tank Battle`,
-    description: `View ${user.username}'s profile on Tank Battle. Tank: ${user.tankName || 'None'}`,
+    description: `View ${user.username}'s profile on Tank Battle.`,
   }
 }
 
@@ -33,7 +33,6 @@ async function getUserProfile(userId: number) {
       select: {
         id: true,
         username: true,
-        tankName: true,
         tankColor: true,
         tankLevel: true,
         xp: true,

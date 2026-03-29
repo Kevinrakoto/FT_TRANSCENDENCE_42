@@ -6,7 +6,6 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useEffect } from 'react'
-import { chatSocket } from '@/lib/socket-client'
 
 export default function FriendRequestsClient() {
   const { data: session, status } = useSession()
@@ -20,9 +19,6 @@ export default function FriendRequestsClient() {
   }, [session, status, router])
 
   const handleLogout = async () => {
-    if (session?.user) {
-      chatSocket.disconnect()
-    }
     await signOut({ redirect: false })
     window.location.href = '/signin'
   }

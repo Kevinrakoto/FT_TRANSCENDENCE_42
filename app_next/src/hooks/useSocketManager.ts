@@ -4,7 +4,7 @@
 import { useEffect } from 'react'
 import { getSocket } from '@/lib/socket-client'
 
-export function useSocketManager(userId: string | null, username?: string | null, tankName?: string | null) {
+export function useSocketManager(userId: string | null, username?: string | null) {
   useEffect(() => {
     const socket = getSocket()
 
@@ -25,5 +25,5 @@ export function useSocketManager(userId: string | null, username?: string | null
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [userId, username, tankName])
+  }, [userId, username])
 }

@@ -30,8 +30,6 @@ export async function GET(req: Request) {
 
     const currentUserId = Number(session.user.id)
 
-    console.log('Search query:', query, 'currentUserId:', currentUserId)
-
     const users = await prisma.user.findMany({
       where: {
         username: {
@@ -45,7 +43,6 @@ export async function GET(req: Request) {
       select: {
         id: true,
         username: true,
-        tankName: true,
         tankColor: true,
         avatar: true,
         isOnline: true
