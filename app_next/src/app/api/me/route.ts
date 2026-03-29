@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from '@/lib/prisma'
+import { emitSocketEvent } from '@/lib/notifications'
 
 const db = prisma
 
@@ -67,6 +68,13 @@ export async function PUT(request: NextRequest) {
         ...(tankColor && { tankColor }),
       },
     })
+
+    if (tankColor) {
+      emitSocketEvent('user-profile-updated', {
+        userId: session.user.id,
+        tankColor,
+      })
+    }
 
     return NextResponse.json({ user: updatedUser })
 

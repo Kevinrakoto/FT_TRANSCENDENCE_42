@@ -17,7 +17,13 @@ export default function SoloGameClient() {
 
 	useEffect(() => {
 
-		if (status === "loading") return;
+		if (status === "loading") {
+			return (
+				<div className="game-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+					<div className="loading-text">LOADING...</div>
+				</div>
+			);
+		}
 		if (!gameContainerRef.current) return;
 
 		if (!session) {

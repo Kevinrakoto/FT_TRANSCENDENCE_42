@@ -92,7 +92,6 @@ export async function POST(req: Request) {
           { status: 403 }
         )
       }
-      }
     }
 
     const friendship = await prisma.friendship.create({

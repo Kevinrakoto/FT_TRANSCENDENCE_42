@@ -95,6 +95,10 @@ app.prepare().then(() => {
     },
   });
 
+  // Expose io to API routes via global
+  global.__socketIO = io;
+  global.__onlinePlayers = onlinePlayers;
+
   io.on('connection', (socket) => {
     
     socket.on('join-game', (userData) => {
@@ -306,6 +310,7 @@ app.prepare().then(() => {
   if (error) {
     console.error('Server startup error:', error);
   } else {
+    console.log('Server ready on https://localhost:8443')
   }
   });
 
