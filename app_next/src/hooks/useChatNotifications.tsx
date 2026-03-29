@@ -223,22 +223,64 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     setNotifications(prev => [newNotification, ...prev].slice(0, 50))
   }, [])
 
-  const markAsRead = useCallback((id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     setNotifications(prev => 
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     )
+    const numericId = id.replace(/^[a-z]+-/, '').split('-')[0]
+    if (!isNaN(Number(numericId))) {
+      try {
+        await fetch('/api/me/notifications', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationIds: [Number(numericId)] }),
+        })
+      } catch (error) {
+        console.error('[ChatNotifications] Error marking as read:', error)
+      }
+    }
   }, [])
 
-  const markAllAsRead = useCallback(() => {
+  const markAllAsRead = useCallback(async () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    try {
+      await fetch('/api/me/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAllRead: true }),
+      })
+    } catch (error) {
+      console.error('[ChatNotifications] Error marking all as read:', error)
+    }
   }, [])
 
-  const removeNotification = useCallback((id: string) => {
+  const removeNotification = useCallback(async (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id))
+    const numericId = id.replace(/^[a-z]+-/, '').split('-')[0]
+    if (!isNaN(Number(numericId))) {
+      try {
+        await fetch('/api/me/notifications', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationId: Number(numericId) }),
+        })
+      } catch (error) {
+        console.error('[ChatNotifications] Error deleting notification:', error)
+      }
+    }
   }, [])
 
-  const clearAll = useCallback(() => {
+  const clearAll = useCallback(async () => {
     setNotifications([])
+    try {
+      await fetch('/api/me/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clearAll: true }),
+      })
+    } catch (error) {
+      console.error('[ChatNotifications] Error clearing all notifications:', error)
+    }
   }, [])
 
   const unreadMessagesCount = notifications.filter(n => !n.read && n.type === 'message').length

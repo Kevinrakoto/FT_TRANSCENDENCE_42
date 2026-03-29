@@ -48,6 +48,27 @@ clean:
 # 5. Full restart (Complete reset)
 re: clean all
 
+# --- Production ---
+prod-build:
+	@echo "$(BLUE)Building production Docker images...$(RESET)"
+	docker compose -f docker-compose.prod.yml build
+
+prod-up:
+	@echo "$(GREEN)Starting production infrastructure...$(RESET)"
+	docker compose -f docker-compose.prod.yml up -d
+	@echo "$(YELLOW)Production application logs:$(RESET)"
+	docker compose -f docker-compose.prod.yml logs -f app
+
+prod-down:
+	@echo "$(BLUE)Stopping production containers...$(RESET)"
+	docker compose -f docker-compose.prod.yml down
+
+prod-clean:
+	@echo "$(RED)Cleaning production containers, volumes and images...$(RESET)"
+	docker compose -f docker-compose.prod.yml down --volumes --rmi all
+
+prod-re: prod-clean certs prod-build prod-up
+
 # --- Specific Logs (Color-coded) ---
 
 logs-vault:
@@ -66,4 +87,4 @@ logs-db:
 	@echo "$(RED)Showing POSTGRES logs (Errors)...$(RESET)"
 	docker logs -f postgres-1
 
-.PHONY: all certs build up down clean re logs-vault logs-nginx logs-app logs-db
+.PHONY: all certs build up down clean re prod-build prod-up prod-down prod-clean prod-re logs-vault logs-nginx logs-app logs-db
