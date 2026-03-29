@@ -1,6 +1,6 @@
-import { prisma } from "./prisma"
+const { prisma } = require('./prisma');
 
-export async function recordGameResult(leaderboard: any[], winnerUsername: string) 
+async function recordGameResult(leaderboard, winnerUsername) 
 {
 	    try 
 	    {
@@ -41,3 +41,7 @@ export async function recordGameResult(leaderboard: any[], winnerUsername: strin
 		throw error;
 	    }
 }
+
+module.exports = {
+	recordGameResult,
+};
