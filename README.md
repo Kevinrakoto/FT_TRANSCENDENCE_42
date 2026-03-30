@@ -234,9 +234,8 @@ User ─┬──< Friendship >── User
 ### Points Summary
 
 1. Use a framework for frontend AND backend (Next.js) — Web — 2 pts (Major) — ✅
-2. Real-time features with WebSockets (Socket.IO) — Web — 2 pts (Major) — ✅
-3. User interaction (chat, profiles, friends) — Web — 2 pts (Major) — ✅
-4. Public API with auth, rate limiting, docs — Web — 2 pts (Major) — ✅
+2. User interaction (chat, profiles, friends) — Web — 2 pts (Major) — ✅
+3. Public API with auth, rate limiting, docs — Web — 2 pts (Major) — ✅
 5. ORM for database (Prisma) — Web — 1 pt (Minor) — ✅
 6. Notification system — Web — 1 pt (Minor) — ✅
 7. PWA with offline support — Web — 1 pt (Minor) — ✅

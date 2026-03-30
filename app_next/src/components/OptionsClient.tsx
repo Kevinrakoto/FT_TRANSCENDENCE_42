@@ -104,6 +104,13 @@ export default function OptionsClient() {
 									style={{ width: '50px', height: '30px', cursor: 'pointer' }}
 								/>
 								<span className="info-value level-badge">{tankColor}</span>
+								<button
+									onClick={() => setTankColor('#ff0000')}
+									className="menu-button"
+									style={{ padding: '5px 15px', cursor: 'pointer' }}
+								>
+									<span className="menu-text">DEFAULT</span>
+								</button>
 							</div>
 						</div>
 					</div>

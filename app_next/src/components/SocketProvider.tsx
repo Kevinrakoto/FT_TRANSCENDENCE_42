@@ -34,7 +34,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     const onForceLogout = (_data: any) => {
       connectedRef.current = false
       setIsConnected(false)
-      signOut({ callbackUrl: '/' })
+      socket.disconnect()
+      signOut({ callbackUrl: '/signin' })
     }
 
     socket.on('disconnect', onDisconnect)
