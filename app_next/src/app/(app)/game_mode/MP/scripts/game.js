@@ -794,35 +794,6 @@ export function launchGame(container, callbacks, userData, gameMode) {
 		return (sprite);
 	}
 
-	function createNameLabel( name ) {
-		const canvas = document.createElement('canvas');
-		const ctx = canvas.getContext('2d');
-
-		const textWidth = (name.length * 40) + 60;
-		canvas.width = Math.max(256, textWidth);
-		canvas.height = 128;
-
-		ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-		ctx.beginPath();
-		ctx.roundRect(0, 0, canvas.width, canvas.height, 8);
-		ctx.fill();
-		ctx.font = 'bold 64px Arial';
-		ctx.fillStyle = 'white';
-		ctx.textAlign = 'center';
-		ctx.textBaseline = 'middle';
-		ctx.fillText(name, canvas.width / 2, canvas.height / 2);
-
-		const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-			map: new THREE.CanvasTexture(canvas),
-			depthTest: false,
-		}));
-
-		const ratio = canvas.width / canvas.height;
-		sprite.scale.set(1 * ratio * 0.5, 0.5, 1);
-
-		return (sprite);
-	}
-
 	function createBlock( type, x, y ) {
 		let clone;
 		const realX = (x * blockSize) + (blockSize / 2) - ((map[y].length * blockSize) / 2);
