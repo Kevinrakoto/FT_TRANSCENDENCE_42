@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+@import "../../node_modules/tailwindcss/tailwind.css";
+
+@import "./styles/variables.css";
+@import "./styles/base.css";
+@import "./styles/layout.css";
+@import "./styles/animations.css";
+@import "./styles/components/buttons.css";
+@import "./styles/components/navigation.css";
+@import "./styles/components/auth.css";
+@import "./styles/components/landing.css";
+@import "./styles/components/decorations.css";
+@import "./styles/responsive.css";
+@import "./styles/components/mode_selection.css";
+@import "./styles/components/dashboard.css";
+@import "./styles/components/leaderboard.css";
+

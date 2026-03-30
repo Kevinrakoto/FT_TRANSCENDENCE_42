@@ -1,0 +1,400 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Tank Battle Public API",
+    "description": "Public API for Tank Battle - a multiplayer tank game. All endpoints require a valid API key passed via the `X-API-Key` header. Generate API keys from your profile settings in the application.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Tank Battle API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://localhost:8443",
+      "description": "Local development server"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key generated from your profile. Format: `pk_<uuid>`. Generate keys via `POST /api/me/api-keys` (requires session auth)."
+      }
+    },
+    "schemas": {
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "integer", "example": 150 },
+          "limit": { "type": "integer", "example": 10 },
+          "offset": { "type": "integer", "example": 0 },
+          "hasMore": { "type": "boolean", "example": true }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "example": "Invalid API key" }
+        }
+      },
+      "ProfileSummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "username": { "type": "string", "example": "TankMaster" },
+          "tankLevel": { "type": "integer", "example": 12 },
+          "xp": { "type": "integer", "example": 5400 },
+          "wins": { "type": "integer", "example": 42 },
+          "gamesPlayed": { "type": "integer", "example": 100 },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProfileDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "username": { "type": "string", "example": "TankMaster" },
+          "email": { "type": "string", "format": "email", "example": "tank@battle.com" },
+          "tankColor": { "type": "string", "example": "#ff0000" },
+          "tankLevel": { "type": "integer", "example": 12 },
+          "xp": { "type": "integer", "example": 5400 },
+          "wins": { "type": "integer", "example": 42 },
+          "gamesPlayed": { "type": "integer", "example": 100 },
+          "isOnline": { "type": "boolean", "example": true },
+          "lastSeen": { "type": "string", "format": "date-time", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "gamesAsPlayer": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameHistory" }
+          }
+        }
+      },
+      "UserSummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "username": { "type": "string", "example": "TankMaster" },
+          "tankLevel": { "type": "integer", "example": 12 },
+          "xp": { "type": "integer", "example": 5400 },
+          "wins": { "type": "integer", "example": 42 },
+          "gamesPlayed": { "type": "integer", "example": 100 },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UserStats": {
+        "type": "object",
+        "properties": {
+          "totalGames": { "type": "integer", "example": 100 },
+          "totalWins": { "type": "integer", "example": 42 },
+          "totalXp": { "type": "integer", "example": 5400 },
+          "winRate": { "type": "integer", "example": 42, "description": "Win rate as percentage" },
+          "recentGames": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameHistory" }
+          }
+        }
+      },
+      "GameHistory": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "opponentId": { "type": "integer", "example": 2 },
+          "winnerId": { "type": "integer", "example": 1 },
+          "playerScore": { "type": "integer", "example": 10 },
+          "opponentScore": { "type": "integer", "example": 7 },
+          "duration": { "type": "integer", "example": 180, "description": "Duration in seconds" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Friend": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 2 },
+          "username": { "type": "string", "example": "TankPro" },
+          "tankLevel": { "type": "integer", "example": 8 },
+          "wins": { "type": "integer", "example": 25 },
+          "isOnline": { "type": "boolean", "example": true },
+          "lastSeen": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "userId": { "type": "integer", "example": 1 },
+          "type": { "type": "string", "example": "FRIEND_REQUEST" },
+          "message": { "type": "string", "example": "TankPro sent you a friend request" },
+          "isRead": { "type": "boolean", "example": false },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProfileUpdateBody": {
+        "type": "object",
+        "properties": {
+          "tankColor": { "type": "string", "example": "#00ff00", "description": "Hex color code" }
+        }
+      },
+      "NotificationUpdateBody": {
+        "type": "object",
+        "properties": {
+          "markAllRead": { "type": "boolean", "example": true, "description": "Mark all notifications as read" },
+          "notificationIds": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "example": [1, 2, 3],
+            "description": "Specific notification IDs to mark as read"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/public/profiles": {
+      "get": {
+        "tags": ["Profiles"],
+        "summary": "List profiles",
+        "description": "Retrieve a paginated list of user profiles, optionally filtered by tank level.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10, "maximum": 100 },
+            "description": "Maximum number of results (max 100)"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "default": 0 },
+            "description": "Number of results to skip"
+          },
+          {
+            "name": "tankLevel",
+            "in": "query",
+            "schema": { "type": "integer" },
+            "description": "Filter by exact tank level"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of profiles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/ProfileSummary" } },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid or missing API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "429": { "description": "Rate limit exceeded (100 req/min)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/public/profiles/{id}": {
+      "get": {
+        "tags": ["Profiles"],
+        "summary": "Get profile by ID",
+        "description": "Retrieve a detailed user profile including recent game history.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "User ID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile details",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/ProfileDetail" } } } } }
+          },
+          "400": { "description": "Invalid profile ID", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Profile not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "put": {
+        "tags": ["Profiles"],
+        "summary": "Update profile",
+        "description": "Update a user's tank name and/or color.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "User ID" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProfileUpdateBody" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Profile updated successfully" },
+                    "data": { "$ref": "#/components/schemas/ProfileSummary" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid profile ID", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Profiles"],
+        "summary": "Delete profile",
+        "description": "Permanently delete a user account and all associated data.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "User ID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile deleted",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string", "example": "Profile deleted successfully" } } } } }
+          },
+          "400": { "description": "Invalid profile ID", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/public/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "List users",
+        "description": "Retrieve a paginated list of users, optionally filtered by username.",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10, "maximum": 100 }, "description": "Maximum number of results" },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 }, "description": "Number of results to skip" },
+          { "name": "username", "in": "query", "schema": { "type": "string" }, "description": "Filter by username (case-insensitive partial match)" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/UserSummary" } },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get user by ID",
+        "description": "Retrieve basic public information about a specific user.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "User ID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/UserSummary" } } } } }
+          },
+          "404": { "description": "User not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/public/users/{id}/stats": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get user game statistics",
+        "description": "Retrieve game statistics for a user including total games, wins, XP, win rate, and recent game history.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "User ID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "User statistics",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/UserStats" } } } } }
+          },
+          "400": { "description": "Invalid user ID", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/public/friends/{id}": {
+      "get": {
+        "tags": ["Friends"],
+        "summary": "Get user's friends list",
+        "description": "Retrieve the list of accepted friends for a specific user.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "User ID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of friends",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Friend" } } } } } }
+          },
+          "400": { "description": "Invalid user ID", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/public/notifications/{id}": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Get user notifications",
+        "description": "Retrieve paginated notifications for a specific user with optional read/unread filter.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "User ID" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "isRead", "in": "query", "schema": { "type": "boolean" }, "description": "Filter by read status" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated notifications with unread count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Notification" } },
+                    "unreadCount": { "type": "integer", "example": 5 },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Notifications"],
+        "summary": "Mark notifications as read",
+        "description": "Mark specific notifications or all notifications as read for a user.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "description": "User ID" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationUpdateBody" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Notifications updated",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string", "example": "Notifications marked as read" } } } } }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    { "name": "Profiles", "description": "User profile management" },
+    { "name": "Users", "description": "User data and statistics" },
+    { "name": "Friends", "description": "Friendship data" },
+    { "name": "Notifications", "description": "User notifications" }
+  ]
+}
