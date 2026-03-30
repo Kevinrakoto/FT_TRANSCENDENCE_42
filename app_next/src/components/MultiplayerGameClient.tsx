@@ -70,53 +70,42 @@ export default function MultiplayerGameClient() {
 
 	}, [gameMode, freshUserData]);
 
-    if (!gameMode) {
-        return (
-            <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-                 {/* Background decoration */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-gray-950 to-gray-950"></div>
-                
-                <div className="z-10 text-center space-y-8 animate-in zoom-in duration-300">
-                    <h1 className="text-6xl font-black text-white tracking-tighter mb-2 drop-shadow-2xl">
-                        SELECT MODE
-                    </h1>
-                    <p className="text-gray-400 uppercase tracking-widest text-sm">
-                        Choose your battlefield size
-                    </p>
+	// --- 1. MODE SELECTION SCREEN ---
+	if (!gameMode) {
+		return (
+			<div className="landing-container">
+				<div className="landing-background"></div>
+				<div className="dashboard-container">
+					<header className="dashboard-header">
+						<h1 className="dashboard-title">
+							<span className="title-top">SELECT</span>
+							<span className="title-main">GAME MODE</span>
+						</h1>
+					</header>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                        {/* 1v1 Card */}
-                        <button onClick={() => setGameMode(2)} 
-                                className="group relative bg-gray-900/50 border border-white/10 p-8 rounded-2xl hover:bg-blue-600 hover:border-blue-400 transition-all duration-300 hover:scale-105 active:scale-95 text-left w-64">
-                            <div className="text-4xl font-black text-white mb-2 group-hover:text-white">1v1</div>
-                            <div className="text-gray-400 text-sm group-hover:text-blue-100">Duel</div>
-                            <div className="absolute bottom-4 right-4 text-6xl opacity-10 font-black">2</div>
-                        </button>
+					<div className="vector-card" style={{ maxWidth: '400px', margin: '0 auto' }}>
+						<div className="profile-actions" style={{ flexDirection: 'column', gap: '15px' }}>
+							<button onClick={() => setGameMode(2)} className="menu-item" style={{ width: '100%', justifyContent: 'center' }}>
+								<span>1v1 DUEL</span>
+							</button>
+							<button onClick={() => setGameMode(3)} className="menu-item" style={{ width: '100%', justifyContent: 'center' }}>
+								<span>1v1v1 TRIPLE</span>
+							</button>
+							<button onClick={() => setGameMode(4)} className="menu-item" style={{ width: '100%', justifyContent: 'center' }}>
+								<span>4 PLAYER CHAOS</span>
+							</button>
+						</div>
+					</div>
 
-                        {/* 1v1v1 Card */}
-                        <button onClick={() => setGameMode(3)}
-                                className="group relative bg-gray-900/50 border border-white/10 p-8 rounded-2xl hover:bg-purple-600 hover:border-purple-400 transition-all duration-300 hover:scale-105 active:scale-95 text-left w-64">
-                            <div className="text-4xl font-black text-white mb-2 group-hover:text-white">1v1v1</div>
-                            <div className="text-gray-400 text-sm group-hover:text-purple-100">Triple Threat</div>
-                            <div className="absolute bottom-4 right-4 text-6xl opacity-10 font-black">3</div>
-                        </button>
-
-                         {/* 1v1v1v1 Card */}
-                         <button onClick={() => setGameMode(4)}
-                                className="group relative bg-gray-900/50 border border-white/10 p-8 rounded-2xl hover:bg-red-600 hover:border-red-400 transition-all duration-300 hover:scale-105 active:scale-95 text-left w-64">
-                            <div className="text-4xl font-black text-white mb-2 group-hover:text-white">1v1v1v1</div>
-                            <div className="text-gray-400 text-sm group-hover:text-red-100">4 Player Chaos</div>
-                            <div className="absolute bottom-4 right-4 text-6xl opacity-10 font-black">4</div>
-                        </button>
-                    </div>
-
-                    <button onClick={() => router.back()} className="text-gray-500 hover:text-white mt-12 underline text-sm">
-                        Return to Main Menu
-                    </button>
-                </div>
-            </div>
-        )
-    }
+					<div style={{ textAlign: 'center', marginTop: '30px' }}>
+						<Link href="/home" className="back-button" style={{ position: 'relative', left: '0', top: '0' }}>
+							← RETURN TO MENU
+						</Link>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 	<div>
@@ -128,123 +117,96 @@ export default function MultiplayerGameClient() {
 			← Return
 		</button>
 
-        {!isGameRunning && (
-            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-950 text-white">
-                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <h2 className="text-2xl font-bold animate-pulse">SEARCHING FOR PLAYERS...</h2>
-                <p className="text-gray-500 mt-2">Mode: {gameMode} Players</p>
-                <button onClick={() => window.location.reload()} className="mt-8 text-sm underline text-gray-400 hover:text-white">Cancel</button>
-            </div>
-        )}
+		{!isGameRunning && (
+			<div className="landing-container" style={{ position: 'absolute', zIndex: 50, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+				<div className="landing-background"></div>
+				<div className="loading-text" style={{ fontSize: '24px', letterSpacing: '4px' }}>SEARCHING FOR PLAYERS...</div>
+				<div className="detail-label" style={{ marginTop: '10px' }}>MODE: {gameMode} PLAYERS</div>
+				<button onClick={() => window.location.reload()} className="back-button" style={{ position: 'relative', left: '0', top: '0', marginTop: '30px' }}>
+					CANCEL
+				</button>
+			</div>
+		)}
 
         {/* GAME OVER SCREEN */}
-        {gameOverData && (() => {
-            // Sort the leaderboard locally to find who has the most points
-            const sortedBoard = [...leaderboard].sort((a: any, b: any) => b.score - a.score);
-            const topPlayer = sortedBoard[0]?.username;
-            const isWinner = topPlayer === freshUserData?.username;
+		{gameOverData && (() => {
+			const sortedBoard = [...leaderboard].sort((a: any, b: any) => b.score - a.score);
+			const topPlayer = sortedBoard[0]?.username;
+			const isWinner = topPlayer === freshUserData?.username;
 
-            return (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-500">
-                    <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-                        
-                        {/* Background Glow Effect */}
-                        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 blur-3xl pointer-events-none ${
-                            isWinner 
-                            ? 'bg-gradient-to-b from-yellow-500/30 to-transparent' 
-                            : 'bg-gradient-to-b from-red-500/30 to-transparent'
-                        }`}/>
+			return (
+				<div className="landing-container" style={{ position: 'absolute', zIndex: 100, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)' }}>
+					<div className="dashboard-container" style={{ paddingTop: '10vh' }}>
+						<header className="dashboard-header">
+							<h1 className="dashboard-title">
+								<span className="title-top">MATCH OVER</span>
+								<span className="title-main" style={{ color: isWinner ? '#fbbf24' : '#ef4444' }}>
+									{isWinner ? 'YOU WIN!' : 'YOU LOSE'}
+								</span>
+							</h1>
+						</header>
+						<div className="vector-card" style={{ maxWidth: '400px', margin: '0 auto' }}>
+							<div className="profile-details">
+								{sortedBoard.map((p: any, index: number) => (
+									<div key={p.username} className="detail-row">
+										<span className="detail-label" style={{ color: index === 0 ? '#fbbf24' : '#ffffff' }}>
+											{index + 1}. {p.username}
+										</span>
+										<span className="detail-value score">{p.score} KILLS</span>
+									</div>
+								))}
+							</div>
 
-                        <div className="text-center mb-8 relative z-10">
-                            <h1 className={`text-5xl font-black tracking-tighter mb-2 italic ${
-                                isWinner ? 'text-yellow-400' : 'text-red-500'
-                            }`}>
-                                {isWinner ? 'YOU WIN!' : 'YOU LOSE'}
-                            </h1>
-                            <p className="text-gray-400 uppercase tracking-widest text-sm">
-                                {isWinner 
-                                    ? 'Victory Secured' 
-                                    : `${topPlayer || 'Someone'} won the match`}
-                            </p>
-                        </div>
-
-                        {/* Final Standings List */}
-                        <div className="space-y-3 mb-8 relative z-10">
-                            {sortedBoard.map((p: any, index: number) => (
-                                <div key={p.username} className={`flex items-center justify-between p-4 rounded-xl border ${
-                                    index === 0 
-                                        ? 'bg-yellow-500/10 border-yellow-500/50' 
-                                        : 'bg-white/5 border-white/5'
-                                }`}>
-                                    <div className="flex items-center gap-4">
-                                        <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
-                                            index === 0 ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-400'
-                                        }`}>
-                                            {index + 1}
-                                        </div>
-                                        <span className={`font-bold ${index === 0 ? 'text-yellow-200' : 'text-white'}`}>
-                                            {p.username}
-                                        </span>
-                                    </div>
-                                    <span className="font-mono text-xl font-bold text-white">
-                                        {p.score} <span className="text-xs text-gray-500 font-normal ml-1">KILLS</span>
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="grid grid-cols-2 gap-4 relative z-10">
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="py-4 bg-white text-black font-black rounded-xl hover:bg-gray-200 hover:scale-[1.02] transition-all active:scale-95"
-                            >
-                                PLAY AGAIN
-                            </button>
-                            <button
-                                onClick={() => router.back()}
-                                className="py-4 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-700 hover:scale-[1.02] transition-all active:scale-95"
-                            >
-                                EXIT
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        })()}
+							<div className="profile-actions" style={{ flexDirection: 'column', gap: '15px', marginTop: '25px' }}>
+								<button onClick={() => window.location.reload()} className="menu-item" style={{ width: '100%', justifyContent: 'center' }}>
+									<span>PLAY AGAIN</span>
+								</button>
+								<button onClick={() => router.back()} className="menu-item" style={{ width: '100%', justifyContent: 'center', background: 'transparent', border: '2px solid rgba(255,255,255,0.2)' }}>
+									<span>EXIT TO MENU</span>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			);
+		})()}
 
         {/* LIVE HUD LEADERBOARD */}
-        <div className="absolute top-4 right-4 z-40 bg-black/60 text-white p-4 rounded-xl backdrop-blur-md border border-white/10 shadow-xl min-w-[200px]">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/>
-                Live Standings
-            </h3>
-            
-            <div className="space-y-2">
-                {leaderboard
-                    .sort((a, b) => b.score - a.score)
-                    .map((p, index) => (
-                        <div key={p.username} className={`flex items-center justify-between text-sm p-2 rounded-lg transition-colors ${
-                            session?.user?.username === p.username ? 'bg-white/10 ring-1 ring-white/20' : ''
-                        }`}>
-                            <div className="flex items-center gap-3">
-                                <span className={`font-mono w-4 text-center ${
-                                    index === 0 ? 'text-yellow-400 font-bold' : 
-                                    index === 1 ? 'text-gray-300' : 
-                                    index === 2 ? 'text-orange-400' : 'text-gray-500'
-                                }`}>
-                                    {index + 1}
-                                </span>
-                                <span className="font-medium truncate max-w-[100px]">{p.username}</span>
-                            </div>
-                            <span className="font-bold font-mono text-yellow-500 ml-4">
-                                {p.score}
-                            </span>
-                        </div>
-                    ))}
-            </div>
-        </div>
-
+		{isGameRunning && !gameOverData && (
+			<div style={{
+				position: 'absolute',
+				top: '20px',
+				right: '20px',
+				zIndex: 40,
+				background: 'rgba(20, 20, 35, 0.85)',
+				border: '1px solid rgba(255, 255, 255, 0.1)',
+				backdropFilter: 'blur(10px)',
+				borderRadius: '8px',
+				padding: '15px',
+				minWidth: '220px'
+			}}>
+				<div className="detail-label" style={{ marginBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+					LIVE STANDINGS
+				</div>
+				
+				<div className="profile-details" style={{ background: 'transparent', padding: '0' }}>
+					{leaderboard
+						.sort((a, b) => b.score - a.score)
+						.map((p, index) => {
+							const isMe = session?.user?.username === p.username;
+							return (
+								<div key={p.username} className="detail-row" style={{ borderBottom: 'none', padding: '6px 0' }}>
+									<span className="detail-label" style={{ color: isMe ? '#ffffff' : '#8b8b8b' }}>
+										{index + 1}. {p.username}
+									</span>
+									<span className="detail-value score">{p.score}</span>
+								</div>
+							);
+						})
+					}
+				</div>
+			</div>
+		)}
 
 		<div
 			ref={gameContainerRef}

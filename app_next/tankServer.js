@@ -29,8 +29,22 @@ module.exports = (io) => {
         });
 
         if (lobbies[gameMode].length >= gameMode) {
-			const originalMatchPlayers = lobbies[gameMode].slice(0, gameMode);
+			const originalMatchPlayers = lobbies[gameMode].splice(0, gameMode);
             let matchPlayers = [...originalMatchPlayers];
+			let matchEnded = false;
+
+			let activePowerup = false;
+			let powerupTimer = null;
+
+			function startPowerupTimer() {
+				if (powerupTimer) clearTimeout(powerupTimer);
+				powerupTimer = setTimeout(() => {
+					if (matchEnded) return;
+					activePowerup = true;
+					matchPlayers.forEach(p => p.emit('spawnPowerup'));
+				}, 20000);
+			}
+			startPowerupTimer();
 			const playerNames = originalMatchPlayers.map(p => p.data.username);
 			const playerColors = originalMatchPlayers.map(p => p.data.tankColor);
             const mapNames = ['one', 'two', 'three'];
@@ -53,6 +67,8 @@ module.exports = (io) => {
 				playerSocket.on('disconnect', () => {
 					matchPlayers = matchPlayers.filter(p => p.id !== playerSocket.id);
 
+					if (matchEnded) return;
+
 					const leaderboard = matchPlayers.map( p => ({
 						playerNumber: originalMatchPlayers.indexOf(p) + 1,
 						username: p.data.username,
@@ -66,10 +82,13 @@ module.exports = (io) => {
 						other.emit('leaderboardUpdate', leaderboard);
 					});
 
-					if (matchPlayers.length === 1) {
-						matchPlayers[0].emit('gameOver', {
-							leaderboard: leaderboard
-						});
+					if (matchPlayers.length <= 1) {
+						matchEnded = true;
+						if (matchPlayers.length === 1) {
+							matchPlayers[0].emit('gameOver', {
+								leaderboard: leaderboard
+							});
+						}
 					}
 				});
                 playerSocket.emit('gameStart', {
@@ -81,6 +100,17 @@ module.exports = (io) => {
                 });
 				playerSocket.emit('leaderboardUpdate', initialLeaderboard);
                 playerSocket.on('move', (data) => {
+					if (activePowerup && Math.abs(data.x) < 0.8 && Math.abs(data.z) < 0.8) {
+						let randomPowerup = Math.random();
+						activePowerup = false;
+						matchPlayers.forEach(other => {
+							other.emit('collectPowerup', {
+								playerNumber: playerNumber,
+								seed: randomSeed
+							});
+						});
+						startPowerupTimer();
+					}
                     matchPlayers.forEach((other) => {
                         if (other.id !== playerSocket.id) {
                             other.emit('playerMoved', {
@@ -137,6 +167,7 @@ module.exports = (io) => {
 					});
 				});
 				playerSocket.on('playerDied', (data) => {
+					if (matchEnded) return;
 					const playerSocket = originalMatchPlayers[data.number - 1];
 					playerSocket.data.score += 1;
 					console.log(playerSocket.data.username, "score:", playerSocket.data.score);
@@ -151,6 +182,7 @@ module.exports = (io) => {
 					});
 
 					if (playerSocket.data.score >= 5) {
+						matchEnded = true;
 						matchPlayers.forEach( p => {
 							p.emit('gameOver', {
 								leaderboard: leaderboard
