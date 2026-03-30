@@ -43,15 +43,7 @@ function initializeSocket(): Socket {
 
   socketInstance.on('disconnect', (_reason) => {
   });
-
-  // When another session takes over this account
-  socketInstance.on('force-logout', (_data) => {
-    currentSocketUserId = null;
-    import('next-auth/react').then(({ signOut }) => {
-      signOut({ callbackUrl: '/' });
-    });
-  });
-
+  
   isSocketInitialized = true;
   return socketInstance;
 }

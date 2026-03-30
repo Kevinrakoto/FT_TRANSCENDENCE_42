@@ -117,109 +117,131 @@ export default function ProfilesClient() {
     return null
   }
 
-  return (
-    <div className="min-h-screen bg-gray-900 py-8">
-      <div className="container mx-auto px-4 max-w-2xl">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-white">My Profile</h1>
-          <Link
-            href="/home"
-            className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-          >
-            Back
-          </Link>
-        </div>
+return (
+  <div className="game-container relative min-h-screen">
+    <div className="absolute inset-0 bg-black/40 z-0 fade"></div>
+      <Link href="/home" className="back-button">
+        ← BACK
+      </Link>
+    <div className="animate-fadeInUp relative z-10 container mx-auto px-4 max-w-2xl py-10">
+      
+      <div className="card-title-wrapper">
+        <h1 className="title-top">My Profile</h1>
+      </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 shadow-lg">
-          <div className="flex flex-col items-center mb-6">
-            <div className="relative">
-              {profile?.avatar ? (
-                <img
-                  src={profile.avatar}
-                  alt="Avatar"
-                  className="w-32 h-32 rounded-full object-cover"
-                />
-              ) : (
-                <div
-                  className="w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold text-white"
-                  style={{ backgroundColor: '#4CAF50' }}
-                >
-                  {profile?.username?.charAt(0)?.toUpperCase() || '?'}
-                </div>
-              )}
-              <label className="absolute bottom-0 right-0 bg-green-600 hover:bg-green-700 text-white p-2 rounded-full cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif,image/webp"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                  disabled={uploading}
-                />
-              </label>
-            </div>
-            {uploading && <p className="text-gray-400 mt-2">Uploading...</p>}
+      <div className="bg-white/20 backdrop-blur-xl border border-white/20 rounded-xl p-6 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+        
+        <div className="flex flex-col items-center mb-6">
+          <div className="relative">
+            {profile?.avatar ? (
+              <img
+                src={profile.avatar}
+                alt="Avatar"
+                className="w-32 h-32 rounded-full object-cover border-2 border-white/20"
+              />
+            ) : (
+              <div
+                className="w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold text-white border-2 border-white/20"
+                style={{ backgroundColor: '#4CAF50' }}
+              >
+                {profile?.username?.charAt(0)?.toUpperCase() || '?'}
+              </div>
+            )}
+
+            <label className="absolute bottom-0 right-0 bg-green-500/80 hover:bg-green-400 backdrop-blur-md text-white p-2 rounded-full cursor-pointer transition-all duration-200">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="hidden"
+                onChange={handleAvatarUpload}
+                disabled={uploading}
+              />
+            </label>
           </div>
 
-          {editing ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-gray-400 mb-2">Username</label>
-                <input
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full bg-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditing(false)}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                <span className="text-gray-400">Username</span>
-                <span className="text-white font-medium">{profile?.username || 'Not set'}</span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                <span className="text-gray-400">Email</span>
-                <span className="text-white font-medium">{profile?.email}</span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                <span className="text-gray-400">Tank Level</span>
-                <span className="text-white font-medium">{profile?.tankLevel || 1}</span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                <span className="text-gray-400">Games Played</span>
-                <span className="text-white font-medium">{profile?.gamesAsPlayer || 0}</span>
-              </div>
-
-              <button
-                onClick={() => setEditing(true)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg mt-4"
-              >
-                Edit Profile
-              </button>
-            </div>
+          {uploading && (
+            <p className="text-gray-300 mt-2">Uploading...</p>
           )}
         </div>
+
+        {editing ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-gray-300 mb-2">Username</label>
+              <input
+                type="text"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
+                className="w-full bg-black/40 backdrop-blur-sm border border-white/10 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+              />
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                className="flex-1 bg-orange-500/80 hover:bg-orange-400 backdrop-blur-md text-white py-2 rounded-lg transition-all duration-200"
+              >
+                Save
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white py-2 rounded-lg transition-all duration-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
+          /* VIEW MODE */
+          <div className="space-y-4">
+            
+            <div className="flex justify-between items-center py-3 border-b border-white/10">
+              <span className="text-gray-300">Username</span>
+              <span className="text-white font-medium">
+                {profile?.username || 'Not set'}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center py-3 border-b border-white/10">
+              <span className="text-gray-300">Email</span>
+              <span className="text-white font-medium">
+                {profile?.email}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center py-3 border-b border-white/10">
+              <span className="text-gray-300">Tank Level</span>
+              <span className="text-white font-medium">
+                {profile?.tankLevel || 1}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center py-3 border-b border-white/10">
+              <span className="text-gray-300">Games Played</span>
+              <span className="text-white font-medium">
+                {profile?.gamesAsPlayer?.length || 0}
+              </span>
+            </div>
+
+            <button
+              onClick={() => setEditing(true)}
+              className="submit-button-si"
+            >
+              Edit Profile
+            </button>
+          </div>
+        )}
       </div>
     </div>
-  )
+  </div>
+)
 }

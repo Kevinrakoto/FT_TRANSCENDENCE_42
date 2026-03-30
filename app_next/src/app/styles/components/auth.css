@@ -172,7 +172,7 @@
 
 
 
-/* ========== VECTOR LANDING PAGE (Inspiré du Flat Design Violet) ========== */
+/* ========== VECTOR LANDING PAGE ) ========== */
 
 .vector-landing-container {
   min-height: 100vh;
@@ -182,25 +182,9 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-  /* Fond dégradé violet profond */
   background: linear-gradient(135deg, #40235e 0%, #23163b 100%);
   font-family: 'Nunito', sans-serif;
 }
-
-/* Montagnes d'arrière-plan géométriques */
-.bg-mountain {
-  position: absolute;
-  bottom: 0;
-  width: 0;
-  height: 0;
-  border-left: 50vw solid transparent;
-  border-right: 50vw solid transparent;
-  border-bottom: 60vh solid rgba(41, 23, 62, 0.4);
-  z-index: 0;
-}
-.bg-m-1 { left: -20vw; border-bottom: 70vh solid rgba(50, 28, 75, 0.5); }
-.bg-m-2 { right: -30vw; border-bottom: 50vh solid rgba(34, 19, 53, 0.6); }
-.bg-m-3 { left: 20vw; border-bottom: 40vh solid rgba(27, 16, 43, 0.7); }
 
 .vector-card {
   position: relative;
@@ -216,6 +200,23 @@
   flex-direction: column;
   overflow: hidden;
   animation: fadeIn 1s ease-out;
+}
+
+.vector-card-dash {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 400px;
+  height: 600px;
+  background: transparent;
+  backdrop-filter: blur(5px);
+  border-radius: 8px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeIn 1s ease-out;
+  padding: 40px;
 }
 
 .card-illustration {

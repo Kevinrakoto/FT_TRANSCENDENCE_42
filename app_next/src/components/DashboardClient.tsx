@@ -13,6 +13,7 @@ interface UserData {
   tankLevel: number
   xp: number
   wins: number
+  kills: number
   gamesPlayed: number
   avatar: string | null
   gamesAsPlayer: { playerScore: number }[]
@@ -69,6 +70,7 @@ export default function DashboardClient() {
   const getXp = () => user?.xp ?? 0
   const getWins = () => user?.wins ?? 0
   const getGamesPlayed = () => user?.gamesPlayed ?? 0
+  const getKills = () => user?.kills ?? 0
 
   if (loading || status === 'loading') {
     return (
@@ -151,7 +153,7 @@ export default function DashboardClient() {
           </h1>
         </header>
 
-          <div className="vector-card">
+          <div className="vector-card-dash">
             <div className="profile-avatar-large">
               {user.avatar ? (
                 <img src={user.avatar} alt="Avatar" className="avatar-image" />
@@ -192,11 +194,15 @@ export default function DashboardClient() {
                 <span className="detail-label">GAMES PLAYED</span>
                 <span className="detail-value">{getGamesPlayed()}</span>
               </div>
-              <div className="detail-row">
+              {/* <div className="detail-row">
                 <span className="detail-label">BEST SCORE</span>
                 <span className="detail-value score">
                   {user.gamesAsPlayer[0]?.playerScore ?? "0"}
                 </span>
+              </div> */}
+              <div className="detail-row">
+                <span className="detail-label">KILLS</span>
+                <span className="detail-value">{getKills()}</span>
               </div>
           </div>
 
@@ -207,212 +213,6 @@ export default function DashboardClient() {
           </div>
         </div>
       </div>
-
-      <style>{`
-        .notification-badge {
-          position: absolute;
-          top: -5px;
-          right: -5px;
-          min-width: 18px;
-          height: 18px;
-          padding: 0 5px;
-          border-radius: 9px;
-          background: #ef4444;
-          color: white;
-          font-size: 10px;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .profile-card {
-          background: rgba(20, 20, 35, 0.9);
-          border-radius: 16px;
-          padding: 25px;
-          padding-bottom: 30px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          max-width: 400px;
-          margin: 0 auto;
-        }
-
-        .profile-avatar-large {
-          width: 80px;
-          height: 80px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 20px;
-          border: 3px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
-        }
-
-        .avatar-image {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          object-fit: cover;
-        }
-
-        .avatar-icon {
-          font-size: 35px;
-        }
-
-        .profile-stats {
-          display: flex;
-          justify-content: center;
-          gap: 15px;
-          margin-bottom: 20px;
-          flex-wrap: wrap;
-        }
-
-        .stat-box {
-          text-align: center;
-          padding: 10px 15px;
-          background: rgba(30, 30, 50, 0.8);
-          border-radius: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          min-width: 70px;
-        }
-
-        .stat-label {
-          display: block;
-          font-size: 9px;
-          font-weight: 600;
-          color: #8b8b8b;
-          letter-spacing: 1px;
-          margin-bottom: 5px;
-        }
-
-        .stat-value {
-          display: block;
-          font-size: 18px;
-          font-weight: 700;
-        }
-
-        .stat-value.level {
-          color: #fbbf24;
-        }
-
-        .stat-value.xp {
-          color: #60a5fa;
-        }
-
-        .stat-value.winrate {
-          color: #34d399;
-        }
-
-        .profile-details {
-          background: rgba(30, 30, 50, 0.5);
-          border-radius: 8px;
-          padding: 12px;
-        }
-
-        .detail-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 8px 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .detail-row:last-child {
-          border-bottom: none;
-        }
-
-        .detail-label {
-          color: #8b8b8b;
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 1px;
-        }
-
-        .detail-value {
-          color: #ffffff;
-          font-size: 12px;
-          font-weight: 500;
-        }
-
-        .detail-value.wins {
-          color: #34d399;
-        }
-
-        .detail-value.score {
-          color: #fbbf24;
-        }
-
-        .profile-actions {
-          display: flex;
-          justify-content: center;
-          margin-top: 25px;
-          padding-left: 0;
-        }
-
-        .menu-item-button {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          color: #ffffff;
-          font-size: 1rem;
-          font-weight: 600;
-          text-decoration: none;
-          transition: all 0.3s ease;
-          position: relative;
-          padding: 12px 24px;
-          cursor: pointer;
-          letter-spacing: 1px;
-          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-          border-radius: 8px;
-          border: 2px solid #f97316;
-          box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
-        }
-
-        .menu-item-button::before {
-          content: '▶';
-          position: absolute;
-          left: -25px;
-          opacity: 0;
-          transition: all 0.3s ease;
-          color: #f97316;
-          font-size: 1rem;
-        }
-
-        .menu-item-button:hover {
-          color: #00d9ff;
-          transform: translateX(5px);
-          box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5);
-        }
-
-        .menu-item-button:hover::before {
-          opacity: 1;
-          left: -20px;
-        }
-
-        .menu-item-button:hover .menu-item-text {
-          text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-
-        .menu-item-text {
-          letter-spacing: 1px;
-          transition: all 0.3s ease;
-        }
-
-        .menu-item-button.secondary {
-          background: transparent;
-          border: 2px solid rgba(255, 255, 255, 0.4);
-          color: #ffffff;
-          box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
-        }
-
-        .menu-item-button.secondary:hover {
-          color: #00d9ff;
-          background: rgba(255, 255, 255, 0.1);
-          border-color: rgba(255, 255, 255, 0.6);
-          box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
-        }
-      `}</style>
     </div>
   )
 }

@@ -110,26 +110,14 @@ app.prepare().then(() => {
   
   if (existingPlayer) {
     if (existingPlayer.socketId === socket.id) {
-      // Same socket reconnecting (e.g. page refresh)
       onlinePlayers.set(userData.userId, {
         ...existingPlayer,
         ...userData,
         socketId: socket.id
       });
     } else {
-      // Different socket = new session for same user
-      // Disconnect the OLD socket, accept the NEW one
-      const oldSocket = io.sockets.sockets.get(existingPlayer.socketId);
-      if (oldSocket) {
-        oldSocket.emit('force-logout', { reason: 'Another session opened for this account' });
-        oldSocket.disconnect(true);
-      }
-      // Now register the new socket
-      onlinePlayers.set(userData.userId, {
-        userId: userData.userId,
-        username: userData.username,
-        socketId: socket.id,
-      });
+      socket.emit('force-logout', { reason: 'Another session opened for this account' });
+      socket.disconnect(true);
     }
   } else {
     onlinePlayers.set(userData.userId, {

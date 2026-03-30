@@ -69,20 +69,20 @@ fi
 export VAULT_TOKEN=$(cat "$CONFIG_DIR/root_token")
 
 if [ ! -f "$CERTS_DIR/cert.pem" ]; then
-    echo -e "${YELLOW}[VAULT] No certificate found. Generating SSL...${NC}"
+    echo -e "${YELLOW}[VAULT] Aucun certificat trouvé. Génération SSL...${NC}"
     
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout "$CERTS_DIR/private-key.pem" \
         -out "$CERTS_DIR/cert.pem" \
         -subj "/C=FR/ST=Paris/L=Paris/O=42/CN=localhost"
     
-
+    # On ajuste les permissions pour que Nginx et l'App puissent lire
     chmod 644 "$CERTS_DIR/cert.pem"
     chmod 644 "$CERTS_DIR/private-key.pem"
     
-    echo -e "${GREEN}✅ SSL certificates generated in $CERTS_DIR.${NC}"
+    echo -e "${GREEN}✅ Certificats SSL générés dans $CERTS_DIR.${NC}"
 else
-    echo -e "${GREEN}✅ Using existing SSL certificates..${NC}"
+    echo -e "${GREEN}✅ Utilisation des certificats SSL existants.${NC}"
 fi
 
 echo -e "${YELLOW}[VAULT] Creating internal configuration file...${NC}"
@@ -97,6 +97,7 @@ if ! vault kv get secret/transcendence > /dev/null 2>&1; then
     RAND_PASS=$(openssl rand -hex 16)
     RAND_NEXT_SEC=$(openssl rand -hex 24)
     
+    # On stocke les briques individuelles
     vault kv put secret/transcendence \
         DB_USER="transcendence" \
         DB_PASSWORD="$RAND_PASS" \

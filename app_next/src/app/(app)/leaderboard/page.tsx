@@ -25,6 +25,7 @@ async function getLeaderboard() {
         xp: true,
         wins: true,
         gamesPlayed: true,
+        kills: true
       },
       orderBy: { wins: 'desc' },
       take: 20,
