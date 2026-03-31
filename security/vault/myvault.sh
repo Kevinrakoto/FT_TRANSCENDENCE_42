@@ -16,7 +16,7 @@ mkdir -p "$CERTS_DIR"
 mkdir -p "$CONFIG_DIR"
 
 if [ ! -f "$CERTS_DIR/cert.pem" ]; then
-    echo -e "${YELLOW}[VAULT] Aucun certificat trouvé. Génération SSL initiale...${NC}"
+    echo -e "${YELLOW}[VAULT] No certificate found. Initial SSL generation...${NC}"
     
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout "$CERTS_DIR/private-key.pem" \
@@ -26,9 +26,9 @@ if [ ! -f "$CERTS_DIR/cert.pem" ]; then
     chmod 644 "$CERTS_DIR/cert.pem"
     chmod 644 "$CERTS_DIR/private-key.pem"
     
-    echo -e "${GREEN}✅ Certificats SSL générés avec succès.${NC}"
+    echo -e "${GREEN}✅ SSL certificates successfully generated.${NC}"
 else
-    echo -e "${GREEN}✅ Utilisation des certificats SSL existants.${NC}"
+    echo -e "${GREEN}✅ Using existing SSL certificates.${NC}"
 fi
 
 echo -e "${YELLOW}[VAULT] Starting Vault server with HTTPS config...${NC}"
@@ -48,19 +48,19 @@ if [ "$INIT_STATUS" == "false" ]; then
 
     if [ $? -eq 0 ]; then
         UNSEAL_KEY=$(echo -e "$INIT_OUT" | grep -A 1 '"unseal_keys_b64"' | grep '"' | tail -n 1 | sed 's/[^"]*"//;s/".*//')
+
         ROOT_TOKEN=$(echo "$INIT_OUT" | grep '"root_token"' | cut -d'"' -f4)
 
         echo "$UNSEAL_KEY" > "$CONFIG_DIR/unseal_key"
         echo "$ROOT_TOKEN" > "$CONFIG_DIR/root_token"
 
-        echo -e "${PINK}🔑 ROOT_TOKEN : $ROOT_TOKEN${NC}"
         echo -e "${GREEN}✅ Initialization successful.${NC}"
     else
         echo -e "${RED}❌ ERROR: Initialization failed!${NC}"
         exit 1
     fi
 else
-    echo -e "${GREEN}✅ Vault already initialized.${NC}"
+    echo -e "${GREEN}✅ TOKEN DETECTED${NC}"
 fi
 
 if [ -f "$CONFIG_DIR/unseal_key" ]; then

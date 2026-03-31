@@ -8,19 +8,8 @@ RESET  = \033[0m
 # Project name
 NAME = transcendence
 
-all: certs build up
+all: build up
 
-# 0. Generate SSL certificates (Security)
-certs:
-	@echo "$(YELLOW)Checking certificates...$(RESET)"
-	@mkdir -p app_next/certificates
-	@if [ ! -f app_next/certificates/certificate.pem ]; then \
-		echo "$(YELLOW)Generating SSL certificates...$(RESET)"; \
-		openssl req -x509 -newkey rsa:4096 -keyout app_next/certificates/private-key.pem -out app_next/certificates/certificate.pem -sha256 -days 365 -nodes -subj "/C=FR/ST=Paris/L=Paris/O=42/OU=ft_transcendence/CN=localhost"; \
-		echo "$(GREEN)Certificates generated successfully.$(RESET)"; \
-	else \
-		echo "$(GREEN)Certificates already exist.$(RESET)"; \
-	fi
 
 # 1. Build Docker images
 build:
@@ -44,6 +33,8 @@ clean:
 	@echo "$(RED)Cleaning containers, volumes and images...$(RESET)"
 	docker compose down --volumes --rmi all
 	docker run --rm -v $(PWD)/app_next:/app alpine rm -rf /app/.next
+	@echo "$(RED)Removing local certificates...$(RESET)"
+	rm -rf app_next/certificates
 
 # 5. Full restart (Complete reset)
 re: clean all
@@ -67,7 +58,7 @@ prod-clean:
 	@echo "$(RED)Cleaning production containers, volumes and images...$(RESET)"
 	docker compose -f docker-compose.prod.yml down --volumes --rmi all
 
-prod-re: prod-clean certs prod-build prod-up
+prod-re: prod-clean prod-build prod-up
 
 # --- Specific Logs (Color-coded) ---
 
@@ -87,4 +78,4 @@ logs-db:
 	@echo "$(RED)Showing POSTGRES logs (Errors)...$(RESET)"
 	docker logs -f postgres-1
 
-.PHONY: all certs build up down clean re prod-build prod-up prod-down prod-clean prod-re logs-vault logs-nginx logs-app logs-db
+.PHONY: all build up down clean re prod-build prod-up prod-down prod-clean prod-re logs-vault logs-nginx logs-app logs-db

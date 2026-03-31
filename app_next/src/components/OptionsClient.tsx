@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { signOut } from 'next-auth/react'
 
 export default function OptionsClient() {
 	const [notification, setNotification] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
@@ -60,6 +61,30 @@ export default function OptionsClient() {
 		}
 	}
 
+	const handleExport = () => {
+		window.open('/api/me/gdpr/export', '_blank');
+	}
+
+	const handleDelete = async () => {
+		if (!confirm('CAUTION: This will permanently delete your account and all associated data. Are you absolutely sure?')) return;
+		
+		setSaving(true);
+		try {
+			const res = await fetch('/api/me/gdpr/delete', { method: 'DELETE' });
+			if (res.ok) {
+				signOut({ callbackUrl: '/signin' });
+			} else {
+				const data = await res.json();
+				showNotif(data.error || "Failed to delete account", "error");
+			}
+		} catch (error) {
+			console.error("Delete error:", error);
+			showNotif("Network error", "error");
+		} finally {
+			setSaving(false);
+		}
+	}
+
 	if (loading) return <div className="game-container"><div className="loading-text">LOADING...</div></div>
 
 	return (
@@ -104,6 +129,38 @@ export default function OptionsClient() {
 									style={{ width: '50px', height: '30px', cursor: 'pointer' }}
 								/>
 								<span className="info-value level-badge">{tankColor}</span>
+								<button
+									onClick={() => setTankColor('#ff0000')}
+									className="menu-button"
+									style={{ padding: '5px 15px', cursor: 'pointer' }}
+								>
+									<span className="menu-text">DEFAULT</span>
+								</button>
+							</div>
+						</div>
+					</div>
+					<div className="profile-card" style={{ marginTop: '20px' }}>
+						<div className="profile-info">
+							<h3 style={{ color: '#fff', marginBottom: '15px' }}>🔒 PRIVACY (GDPR)</h3>
+							<div className="info-row">
+								<span className="info-label">MY DATA</span>
+								<button
+									onClick={handleExport}
+									className="menu-button"
+									style={{ padding: '5px 15px', cursor: 'pointer', backgroundColor: '#333' }}
+								>
+									<span className="menu-text">DOWNLOAD</span>
+								</button>
+							</div>
+							<div className="info-row">
+								<span className="info-label" style={{ color: '#ff4444' }}>DANGER ZONE</span>
+								<button
+									onClick={handleDelete}
+									className="menu-button"
+									style={{ padding: '5px 15px', cursor: 'pointer', backgroundColor: '#4a0000', borderColor: '#ff0000' }}
+								>
+									<span className="menu-text" style={{ color: '#ff4444' }}>DELETE ACCOUNT</span>
+								</button>
 							</div>
 						</div>
 					</div>
