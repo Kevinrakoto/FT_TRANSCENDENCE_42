@@ -3,9 +3,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useChatSocket } from '@/hooks/useChatSocket'
-import { useChatNotifications } from '@/hooks/useChatNotifications'
 import { chatSocket } from '@/lib/socket-client'
 import { User, Message } from '@/types/chat'
+import { useUserProfileCache } from '@/components/UserProfileProvider'
 
 interface Props {
   conversationId: number
@@ -18,7 +18,9 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
   const [loading, setLoading] = useState(true)
   const [sentFeedback, setSentFeedback] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { markAllAsRead } = useChatNotifications()
+  const [displayOtherUser, setDisplayOtherUser] = useState(otherUser)
+  
+  const { getProfile } = useUserProfileCache()
   
   const {
     messages,
@@ -49,7 +51,6 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
           
           if (unreadIds.length > 0) {
             chatSocket.markAsRead(conversationId, unreadIds, String(currentUser.id))
-            markAllAsRead()
           }
         }
       } catch (error) {
@@ -60,7 +61,48 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
     }
 
     fetchMessages()
-  }, [conversationId, setMessages, currentUser.id, markAllAsRead])
+  }, [conversationId, setMessages, currentUser.id])
+
+  useEffect(() => {
+    const updatedProfile = getProfile(otherUser.id)
+    if (updatedProfile) {
+      setDisplayOtherUser(prev => ({
+        ...prev,
+        username: updatedProfile.username || prev.username,
+        avatar: updatedProfile.avatar !== undefined ? updatedProfile.avatar : prev.avatar,
+        tankColor: updatedProfile.tankColor !== undefined ? updatedProfile.tankColor : prev.tankColor,
+      }))
+    }
+  }, [getProfile, otherUser.id])
+
+  useEffect(() => {
+    const handleProfileUpdate = (e: CustomEvent) => {
+      const data = e.detail
+      if (data.userId === otherUser.id) {
+        setDisplayOtherUser(prev => ({
+          ...prev,
+          username: data.username !== undefined ? data.username : prev.username,
+          avatar: data.avatar !== undefined ? data.avatar : prev.avatar,
+          tankColor: data.tankColor !== undefined ? data.tankColor : prev.tankColor,
+        }))
+      }
+      setMessages((prev: Message[]) => prev.map((msg: Message) => {
+        if (msg.userId === data.userId) {
+          return {
+            ...msg,
+            user: {
+              ...msg.user,
+              username: data.username !== undefined ? data.username : msg.user?.username,
+              tankColor: data.tankColor !== undefined ? data.tankColor : msg.user?.tankColor,
+            }
+          }
+        }
+        return msg
+      }))
+    }
+    window.addEventListener('user-profile-updated', handleProfileUpdate as EventListener)
+    return () => window.removeEventListener('user-profile-updated', handleProfileUpdate as EventListener)
+  }, [otherUser.id])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -101,24 +143,24 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
       <div className="chat-header">
         <div className="chat-user-info">
           <div className="avatar-wrapper">
-            {otherUser.avatar ? (
+            {displayOtherUser.avatar ? (
               <img 
-                src={otherUser.avatar} 
+                src={displayOtherUser.avatar} 
                 alt="Avatar"
                 className="user-avatar"
               />
             ) : (
               <div 
                 className="user-avatar avatar-placeholder"
-                style={{ backgroundColor: otherUser.tankColor }}
+                style={{ backgroundColor: displayOtherUser.tankColor }}
               >
-                {otherUser.username?.charAt(0)}
+                {displayOtherUser.username?.charAt(0)}
               </div>
             )}
             <div className={`status-dot ${isOtherOnline ? 'online' : 'offline'}`} />
           </div>
           <div className="user-details">
-            <h3 className="user-name">{otherUser.username}</h3>
+            <h3 className="user-name">{displayOtherUser.username}</h3>
             <p className="user-status">
               {isOtherTyping ? (
                 <span className="typing">typing...</span>

@@ -1,16 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 interface GameRecord {
   id: number
-  opponentId: number | null
   winnerId: number | null
   playerScore: number
-  opponentScore: number | null
-  duration: number
   createdAt: Date
 }
 
@@ -40,6 +37,23 @@ export default function UserProfileClient({ user, currentUserId }: Props) {
   const router = useRouter()
   const [addingFriend, setAddingFriend] = useState(false)
   const [friendStatus, setFriendStatus] = useState<string | null>(null)
+  const [displayUser, setDisplayUser] = useState(user)
+
+  useEffect(() => {
+    const handleProfileUpdate = (e: CustomEvent) => {
+      const data = e.detail
+      if (data.userId === user.id) {
+        setDisplayUser(prev => ({
+          ...prev,
+          username: data.username !== undefined ? data.username : prev.username,
+          avatar: data.avatar !== undefined ? data.avatar : prev.avatar,
+          tankColor: data.tankColor !== undefined ? data.tankColor : prev.tankColor,
+        }))
+      }
+    }
+    window.addEventListener('user-profile-updated', handleProfileUpdate as EventListener)
+    return () => window.removeEventListener('user-profile-updated', handleProfileUpdate as EventListener)
+  }, [user.id])
 
   const calculateWinRate = () => {
     if (user.gamesPlayed === 0) return 0
@@ -49,12 +63,6 @@ export default function UserProfileClient({ user, currentUserId }: Props) {
   const calculateKDR = () => {
     if (user.deaths === 0) return user.kills
     return (user.kills / user.deaths).toFixed(1)
-  }
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   const formatDate = (date: Date) => {
@@ -116,33 +124,33 @@ export default function UserProfileClient({ user, currentUserId }: Props) {
         <div className="bg-gray-800 rounded-xl p-6 shadow-lg mb-6">
           <div className="flex flex-col items-center mb-6">
             <div className="relative">
-              {user.avatar ? (
+              {displayUser.avatar ? (
                 <img
-                  src={user.avatar}
+                  src={displayUser.avatar}
                   alt="Avatar"
                   className="w-32 h-32 rounded-full object-cover border-4"
-                  style={{ borderColor: user.tankColor }}
+                  style={{ borderColor: displayUser.tankColor }}
                 />
               ) : (
                 <div
                   className="w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold text-white border-4"
-                  style={{ backgroundColor: user.tankColor, borderColor: user.tankColor }}
+                  style={{ backgroundColor: displayUser.tankColor, borderColor: displayUser.tankColor }}
                 >
-                  {user.username?.charAt(0)?.toUpperCase() || '?'}
+                  {displayUser.username?.charAt(0)?.toUpperCase() || '?'}
                 </div>
               )}
               <div
                 className={`absolute bottom-2 right-2 w-6 h-6 rounded-full border-2 border-gray-800 ${
-                  user.isOnline ? 'bg-green-500' : 'bg-gray-500'
+                  displayUser.isOnline ? 'bg-green-500' : 'bg-gray-500'
                 }`}
               />
             </div>
-            <h2 className="text-2xl font-bold text-white mt-4">{user.username}</h2>
+            <h2 className="text-2xl font-bold text-white mt-4">{displayUser.username}</h2>
             <p className="text-gray-400 text-sm mt-1">
-              {user.isOnline ? (
+              {displayUser.isOnline ? (
                 <span className="text-green-400">● Online</span>
               ) : (
-                <span>Last seen {formatLastSeen(user.lastSeen)}</span>
+                <span>Last seen {formatLastSeen(displayUser.lastSeen)}</span>
               )}
             </p>
           </div>
@@ -204,11 +212,11 @@ export default function UserProfileClient({ user, currentUserId }: Props) {
                         {isWin ? 'WIN' : 'LOSS'}
                       </span>
                       <span className="text-white text-sm">
-                        {game.playerScore} - {game.opponentScore ?? 0}
+                        {game.playerScore} kills
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="text-gray-400 text-xs">{formatDuration(game.duration)}</span>
+                      <span className="text-gray-400 text-xs">{new Date(game.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                 )

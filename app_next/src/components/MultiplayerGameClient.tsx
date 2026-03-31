@@ -58,7 +58,24 @@ export default function MultiplayerGameClient() {
 
 		const gameCallback = {
 			onGameStart: () => setIsGameRunning(true),
-			onGameOver: (data) => setGameOverData(data),
+			onGameOver: async (data) => {
+				setGameOverData(data)
+				try {
+					const res = await fetch('/api/game/results', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							leaderboard: data.leaderboard,
+							duration: 0,
+							gameMode: gameMode
+						})
+					})
+					if (res.ok) {
+					}
+				} catch (e) {
+					console.error('Failed to save game results:', e)
+				}
+			},
 			onLeaderboardUpdate: (data: any) => setLeaderboard(data)
 		};
 

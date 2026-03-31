@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Couleurs
 BLUE='\033[1;34m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -10,7 +9,6 @@ TOKEN_FILE="/vault/config/root_token"
 
 echo -e "${BLUE}[NGINX] Démarrage du script d'initialisation...${NC}"
 
-# SSL
 mkdir -p /etc/nginx/ssl
 if [ ! -f /etc/nginx/ssl/transcendence.crt ]; then
     echo -e "${BLUE}[NGINX] Génération des certificats SSL...${NC}"
@@ -20,7 +18,6 @@ if [ ! -f /etc/nginx/ssl/transcendence.crt ]; then
         -subj "/C=FR/ST=Paris/L=Paris/O=42/OU=TankGame/CN=localhost"
 fi
 
-# Attente Vault
 echo -e "${BLUE}[NGINX] Attente du Token de Vault...${NC}"
 while [ ! -f "$TOKEN_FILE" ]; do
     sleep 2
@@ -28,7 +25,6 @@ done
 
 echo -e "${GREEN}✅ TOKEN DÉTECTÉ : $(cat $TOKEN_FILE)${NC}"
 
-# Test ModSecurity
 echo -e "${BLUE}[NGINX] Test de la configuration (ModSecurity)...${NC}"
 nginx -t
 if [ $? -ne 0 ]; then

@@ -8,6 +8,7 @@ import FriendRequestButton from '@/components/FriendRequestButton'
 import PageLayout from '@/components/PageLayout'
 import { chatSocket } from '@/lib/socket-client'
 import { useChatNotifications } from '@/hooks/useChatNotifications'
+import { useUserProfileCache } from '@/components/UserProfileProvider'
 
 interface OnlinePlayer {
   userId: string
@@ -53,7 +54,27 @@ export default function FriendsClient() {
   const [processingId, setProcessingId] = useState<number | null>(null)
   const [feedback, setFeedback] = useState<ActionFeedback | null>(null)
   const [loading, setLoading] = useState(true)
-  const { notifications, unreadMessagesCount, refreshFriendRequests, toast, dismissToast } = useChatNotifications()
+  const { notifications, unreadMessagesCount, refreshFriendRequests } = useChatNotifications()
+  const { getProfile } = useUserProfileCache()
+  const [friendsWithUpdates, setFriendsWithUpdates] = useState<Map<number, Friend>>(new Map())
+
+  useEffect(() => {
+    setFriendsWithUpdates(prev => {
+      const newMap = new Map(prev)
+      friends.forEach(friend => {
+        const updated = getProfile(friend.id)
+        if (updated) {
+          newMap.set(friend.id, {
+            ...friend,
+            username: updated.username || friend.username,
+            avatar: updated.avatar !== undefined ? updated.avatar : friend.avatar,
+            tankColor: updated.tankColor || friend.tankColor,
+          })
+        }
+      })
+      return newMap
+    })
+  }, [friends, getProfile])
 
   const showFeedback = useCallback((message: string, type: 'success' | 'error') => {
     setFeedback({ message, type })
@@ -123,6 +144,8 @@ export default function FriendsClient() {
     }
 
     const onFriendNotification = (data: any) => {
+      // Don't add duplicate - ChatNotificationsProvider already handles this via window events
+      // This is just for refreshing data
       if (data.type === 'friend_request') {
         fetchPendingRequests()
         refreshFriendRequests()
@@ -131,11 +154,16 @@ export default function FriendsClient() {
       }
     }
 
+    const onFriendsListUpdated = () => {
+      fetchFriends()
+    }
+
     chatSocket.on('online-players-update', onOnlinePlayersUpdate)
     chatSocket.on('user-joined', onUserJoined)
     chatSocket.on('user-left', onUserLeft)
     chatSocket.on('user-profile-updated', onProfileUpdated)
     chatSocket.on('friend-notification', onFriendNotification)
+    window.addEventListener('friends-list-updated', onFriendsListUpdated)
 
     const interval = setInterval(() => {
       chatSocket.emit('request-online-players', {})
@@ -153,6 +181,7 @@ export default function FriendsClient() {
       chatSocket.off('user-left', onUserLeft)
       chatSocket.off('user-profile-updated', onProfileUpdated)
       chatSocket.off('friend-notification', onFriendNotification)
+      window.removeEventListener('friends-list-updated', onFriendsListUpdated)
       clearInterval(interval)
       window.removeEventListener('focus', handleFocus)
     }
@@ -239,34 +268,6 @@ export default function FriendsClient() {
 
   return (
     <PageLayout title="Friends" backUrl="/home">
-      {/* Toast notification from real-time events */}
-      {toast && (
-        <div className="friend-toast" onClick={dismissToast}>
-          <div className="friend-toast-content">
-            <span className="friend-toast-icon">
-              {toast.type === 'friend_request' && '👤'}
-              {toast.type === 'friend_accepted' && '✅'}
-              {toast.type === 'friend_denied' && '❌'}
-              {toast.type === 'friend_removed' && '🚫'}
-              {toast.type === 'message' && '💬'}
-            </span>
-            <div>
-              <p className="friend-toast-title">
-                {toast.type === 'friend_request' && 'New Friend Request'}
-                {toast.type === 'friend_accepted' && 'Friend Request Accepted'}
-                {toast.type === 'friend_denied' && 'Friend Request Declined'}
-                {toast.type === 'friend_removed' && 'Friend Removed'}
-                {toast.type === 'message' && 'New Message'}
-              </p>
-              <p className="friend-toast-message">
-                {toast.message || `${toast.fromUsername} sent you a friend request`}
-              </p>
-            </div>
-            <button className="friend-toast-close" onClick={(e) => { e.stopPropagation(); dismissToast(); }}>&times;</button>
-          </div>
-        </div>
-      )}
-
       {/* Action feedback banner */}
       {feedback && (
         <div className={`action-feedback ${feedback.type}`}>
@@ -324,14 +325,16 @@ export default function FriendsClient() {
           <div className="friends-list-section">
             {friends.length > 0 ? (
               <div className="friends-grid">
-                {friends.map(friend => (
+                {friends.map(friend => {
+                  const updatedFriend = friendsWithUpdates.get(friend.id) || friend
+                  return (
                   <div key={friend.id} className="friend-card">
                     <div className="friend-avatar-container">
-                      {friend.avatar ? (
-                        <img src={friend.avatar} alt="Avatar" className="friend-avatar" />
+                      {updatedFriend.avatar ? (
+                        <img src={updatedFriend.avatar} alt="Avatar" className="friend-avatar" />
                       ) : (
-                        <div className="friend-avatar friend-avatar-placeholder" style={{ backgroundColor: friend.tankColor }}>
-                          {friend.username?.charAt(0)}
+                        <div className="friend-avatar friend-avatar-placeholder" style={{ backgroundColor: updatedFriend.tankColor }}>
+                          {updatedFriend.username?.charAt(0)}
                         </div>
                       )}
                       <div className={`online-indicator ${friend.isOnline ? 'online' : 'offline'}`} />
@@ -339,7 +342,7 @@ export default function FriendsClient() {
 
                     <div className="friend-info">
                       <Link href={`/profiles/${friend.id}`} className="friend-name">
-                        {friend.username}
+                        {updatedFriend.username}
                       </Link>
                       <p className="friend-status">
                         {friend.isOnline ? (
@@ -383,7 +386,8 @@ export default function FriendsClient() {
                       </button>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <div className="empty-state">

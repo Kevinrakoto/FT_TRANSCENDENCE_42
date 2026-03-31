@@ -7,16 +7,19 @@ import { SocketProvider } from "@/components/SocketProvider"
 import { ChatNotificationsProvider } from '@/hooks/useChatNotifications'
 import ChatNotification from '@/components/ChatNotification'
 import AuthGuard from '@/components/AuthGuard'
+import { UserProfileProvider } from '@/components/UserProfileProvider'
 
 export function ClientProviders({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
       <AuthGuard>
         <SocketProvider>
-          <ChatNotificationsProvider>
-            {children}
-            <ChatNotification />
-          </ChatNotificationsProvider>
+          <UserProfileProvider>
+            <ChatNotificationsProvider>
+              {children}
+              <ChatNotification />
+            </ChatNotificationsProvider>
+          </UserProfileProvider>
         </SocketProvider>
       </AuthGuard>
     </SessionProvider>
