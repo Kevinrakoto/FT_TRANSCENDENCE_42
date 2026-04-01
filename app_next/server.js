@@ -265,9 +265,6 @@ app.prepare().then(() => {
         
         io.to(String(data.conversationId)).emit('new-message', message);
         
-        // Also emit globally for notification system
-        io.emit('new-message-global', message);
-        
         if (callback) callback({ success: true, message });
       } catch (error) {
         console.error('Error sending message:', error);
@@ -373,7 +370,7 @@ app.prepare().then(() => {
   initTankGame(io);
 
   // --------------------------------------------------------------------------
-  server.listen(3000, (error) => {
+  server.listen(3000,'0.0.0.0',  (error) => {
   if (error) {
     console.error('Server startup error:', error);
   } else {

@@ -77,7 +77,7 @@ export default function ChatNotification() {
       <div className="fixed top-4 right-4 z-50 flex items-center gap-4">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`relative bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-full shadow-lg transition-all border ${unreadCount > 0 ? 'border-red-500 animate-pulse' : 'border-gray-600'}`}
+          className={`relative bg-gray-800 hover:bg-gray-700 text-white p-3 mt-7 mr-5 rounded-full shadow-lg transition-all border ${unreadCount > 0 ? 'border-red-500 animate-pulse' : 'border-gray-600'}`}
           style={{ outline: unreadCount > 0 ? '2px solid rgba(239, 68, 68, 0.5)' : 'none' }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${unreadCount > 0 ? 'text-red-400' : 'text-gray-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -91,17 +91,8 @@ export default function ChatNotification() {
         </button>
 
         {isOpen && (
-          <div className="absolute top-14 right-0 w-80 bg-gray-900 rounded-lg shadow-xl border border-gray-700 overflow-hidden">
+          <div className="absolute top-20 mt-10 right-0 w-80 bg-gray-900 rounded-lg shadow-xl border border-gray-700 overflow-hidden">
             <div className="flex border-b border-gray-700">
-              <button
-                onClick={() => setActiveTab('messages')}
-                className={`flex-1 p-3 text-center font-medium text-sm ${activeTab === 'messages' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'}`}
-              >
-                Messages
-                {unreadMessagesCount > 0 && (
-                  <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unreadMessagesCount}</span>
-                )}
-              </button>
               <button
                 onClick={() => {
                   setActiveTab('requests')
