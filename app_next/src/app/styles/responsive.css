@@ -88,11 +88,6 @@
     font-size: 0.9rem;
   }
    
-  /* Landing Page */
-  .landing-logo {
-    font-size: 4rem;
-  }
-   
   .title-line-2 {
     font-size: 3.5rem;
     letter-spacing: 12px;
@@ -115,31 +110,16 @@
     font-size: 1.5rem;
   }
    
-  .btn-subtitle {
-    font-size: 0.8rem;
-  }
-   
   .features {
     gap: 25px;
   }
-   
-  .feature-icon {
-    font-size: 1.5rem;
-  }
-   
-  .feature-text {
-    font-size: 0.75rem;
-  }
+  
 }
 
 @media (max-width: 480px) {
   .title-main {
     font-size: 2rem;
     letter-spacing: 4px;
-  }
-  
-  .landing-header {
-    margin-bottom: 40px;
   }
   
   .title-line-2 {

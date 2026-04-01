@@ -18,6 +18,7 @@ export default function ChatNotification() {
     toast,
     dismissToast,
   } = useChatNotifications()
+
   const [isOpen, setIsOpen] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [activeTab, setActiveTab] = useState<'messages' | 'requests' | 'activity'>('messages')
@@ -44,7 +45,6 @@ export default function ChatNotification() {
 
   return (
     <>
-      {/* Toast overlay */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] animate-[slideDown_0.3s_ease-out]" onClick={dismissToast}>
           <div className="flex items-center gap-3 bg-gray-900/95 border border-blue-500/50 rounded-xl px-5 py-3 min-w-[300px] max-w-[420px] shadow-2xl backdrop-blur-md cursor-pointer">
@@ -61,7 +61,7 @@ export default function ChatNotification() {
                 {toast.type === 'friend_accepted' && 'Friend Request Accepted'}
                 {toast.type === 'friend_denied' && 'Friend Request Declined'}
                 {toast.type === 'friend_removed' && 'Friend Removed'}
-                {toast.type === 'message' && 'New Message'}
+                {toast.type === 'message' && 'New Messages'}
               </p>
               <p className="text-gray-400 text-xs truncate">
                 {toast.message || `${toast.fromUsername} sent you a friend request`}
@@ -72,7 +72,6 @@ export default function ChatNotification() {
         </div>
       )}
 
-      {/* Bell icon */}
       <div className="fixed top-4 right-4 z-50 flex items-center gap-4">
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -141,12 +140,12 @@ export default function ChatNotification() {
                         >
                           <div className="flex items-start gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold flex-shrink-0">
-                              {notif.fromTankName?.charAt(0) || notif.fromUsername?.charAt(0) || '?'}
+                              {notif.fromUsername?.charAt(0) || '?'}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-start">
                                 <p className="text-white font-medium truncate">
-                                  {notif.fromTankName || notif.fromUsername}
+                                  {notif.fromUsername}
                                 </p>
                                 {!notif.read && (
                                   <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-2 mt-2"></span>
@@ -196,10 +195,10 @@ export default function ChatNotification() {
                     <div key={notif.id} className="p-3 border-b border-gray-700">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center text-white font-bold flex-shrink-0">
-                          {notif.fromTankName?.charAt(0) || notif.fromUsername?.charAt(0) || '?'}
+                          {notif.fromUsername?.charAt(0) || '?'}
                         </div>
                         <div>
-                          <p className="text-white font-medium text-sm">{notif.fromTankName || notif.fromUsername}</p>
+                          <p className="text-white font-medium text-sm">{notif.fromUsername}</p>
                           <p className="text-gray-400 text-xs">@{notif.fromUsername} wants to be friends</p>
                         </div>
                       </div>
@@ -217,7 +216,13 @@ export default function ChatNotification() {
               <div className="max-h-80 overflow-y-auto">
                 {activityNotifications.length > 0 ? (
                   activityNotifications.slice(0, 10).map((notif) => (
-                    <div key={notif.id} className="p-3 border-b border-gray-700">
+                    <div 
+                      key={notif.id} 
+                      className="p-3 border-b border-gray-700 hover:bg-gray-800 transition-colors cursor-pointer"
+                      onClick={() => {
+                        markAsRead(notif.id)
+                      }}
+                    >
                       <div className="flex items-center gap-3">
                         <span className="text-xl">
                           {notif.type === 'friend_accepted' && '✅'}

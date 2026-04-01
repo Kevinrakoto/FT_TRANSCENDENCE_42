@@ -48,7 +48,6 @@ export function useChatSocket({ conversationId, currentUser }: UseChatSocketProp
       }
     }
 
-    // If socket is already connected, immediately execute the necessary emissions
     if (socket.connected) {
       socket.emit('authenticate', currentUser.id)
       socket.emit('join-private-room', { conversationId, userId: currentUser.id })

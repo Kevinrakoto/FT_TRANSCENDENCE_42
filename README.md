@@ -72,12 +72,6 @@ cp .env.example .env
 ### Useful Commands
 
 ```bash
-# Access Prisma Studio (database GUI)
-docker compose exec app npx prisma studio
-
-# Push schema changes to database
-docker compose exec app npx prisma db push
-
 # Rebuild from scratch
 docker compose down -v
 docker compose up --build
@@ -89,8 +83,8 @@ docker compose up --build
 
 ### Team Members and Roles
 
-- **harakoto** — Tech Lead, Developer — Architecture decisions, backend API, Socket.IO real-time system, Docker infrastructure
-- **kralison** — PO, Developer — Product vision, frontend development, UI/UX design, game integration
+- **harakoto** — PO,Tech Lead, Developer — Architecture decisions, backend API, Socket.IO real-time system, Docker infrastructure
+- **kralison** — Developer — Product vision, frontend development, UI/UX design, game integration
 - **frakotov** — PM, Developer — Project coordination, frontend components, feature implementation
 - **aandriam** — Developer — Feature development, testing
 - **trasamiz** — Developer — Security stack (Nginx, ModSecurity WAF, HashiCorp Vault)
@@ -102,7 +96,7 @@ docker compose up --build
 ### Organization
 
 - **Task tracking**: GitHub Issues and project board
-- **Communication**: Discord for daily sync and quick discussions
+- **Communication**: Slack for daily sync and quick discussions
 - **Branching strategy**: Feature branches merged via pull requests
 - **Code reviews**: At least one peer review before merging
 
@@ -189,8 +183,8 @@ User ─┬──< Friendship >── User
 ### Enums
 
 - `FriendshipStatus`: PENDING, ACCEPTED, DECLINED, BLOCKED
-- `ConversationType`: PRIVATE, GROUP
-- `NotificationType`: FRIEND_REQUEST, FRIEND_ACCEPTED, FRIEND_DENIED, FRIEND_REMOVED, MESSAGE_RECEIVED, GAME_INVITE, GAME_STARTED, SYSTEM
+- `ConversationType`: PRIVATE
+- `NotificationType`: FRIEND_REQUEST, FRIEND_ACCEPTED, FRIEND_DENIED, FRIEND_REMOVED, MESSAGE_RECEIVED
 
 ### Indexes
 
@@ -206,13 +200,13 @@ User ─┬──< Friendship >── User
 - **User Registration & Login** — Email/password auth with bcrypt hashing and JWT sessions — *harakoto*
 - **User Profiles** — Profile page with avatar, username, game stats — *kralison*
 - **Tank Customization** — Choose tank color before playing — *kralison*
-- **Friends System** — Send/accept/deny/block friend requests, online status — *frakotov*
+- **Friends System** — Send/accept/deny/block friend requests, online status — *harakoto*
 - **Private Chat** — Real-time messaging between friends via Socket.IO — *harakoto*
 - **Chat Typing Indicators** — See when someone is typing — *harakoto*
 - **Online Players** — Live list of connected players — *harakoto*
-- **3D Tank Game** — Three.js-based tank battle with 2D grid map — *kralison, AkiraJu*
+- **3D Tank Game** — Three.js-based tank battle with 2D grid map — *kralison, aandriam*
 - **Multiplayer Mode** — Real-time 1v1 tank battles over Socket.IO — *harakoto, kralison*
-- **Solo Mode** — Play against an AI bot opponent — *AkiraJu*
+- **Solo Mode** — Play against an AI bot opponent — *aandriam*
 - **Leaderboard** — Ranked by wins, kills, XP with sortable columns — *frakotov*
 - **Match History** — View past games with scores and opponents — *frakotov*
 - **Notifications** — In-app alerts for friend requests, messages, games — *harakoto*
@@ -225,7 +219,7 @@ User ─┬──< Friendship >── User
 - **HTTPS** — End-to-end encryption with self-signed certificates — *harakoto*
 - **WAF/ModSecurity** — Web Application Firewall with OWASP CRS — *trasamiz*
 - **Vault Integration** — Automated secrets management — *trasamiz*
-- **Design System** — 13 reusable UI components — *kralison*
+- **Design System** — 13 reusable UI components — *frakotov*
 
 ---
 
@@ -246,9 +240,9 @@ User ─┬──< Friendship >── User
 12. Web-based multiplayer game (Tank Battle) — Gaming — 2 pts (Major) — ✅
 13. Remote players (real-time 1v1) — Gaming — 2 pts (Major) — ✅
 14. Game customization (tank color, solo AI mode) — Gaming — 1 pt (Minor) — ✅
-15. Gamification (XP, levels, leaderboard) — Gaming — 1 pt (Minor) — ⚠️ Partial — XP/wins not persisted after matches
+15. Gamification (XP, levels, leaderboard) — Gaming — 1 pt (Minor) — ✅
 
-**Total validated: 22 points** | Total declared: 23 points (minimum required: 14)
+**Total validated: 21 points**
 
 ### Module Details
 
@@ -262,7 +256,7 @@ Socket.IO powers online presence tracking, private chat, game matchmaking, and l
 Complete social system: private chat with typing indicators, user profiles, friend requests with accept/deny/block, online status tracking. Implemented by harakoto, frakotov.
 
 **Web - Public API (Major, 2pts)**
-RESTful API at `/api/public/*` with API key authentication (`X-API-Key` header), rate limiting (100 req/min), Swagger documentation at `/docs`, and multiple CRUD endpoints. Implemented by harakoto.
+RESTful API at `/api/public/*` with API key authentication , rate limiting (100 req/min), Swagger documentation at `/docs`, and multiple CRUD endpoints. Implemented by harakoto.
 
 **Web - ORM (Minor, 1pt)**
 Prisma ORM provides type-safe database access, schema management, and migrations for PostgreSQL. Implemented by harakoto , frakotov.

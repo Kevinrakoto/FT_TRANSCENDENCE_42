@@ -298,3 +298,95 @@
   cursor: not-allowed;
   transform: none;
 }
+
+/*friendCloent btn*/
+
+        .action-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 14px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-decoration: none;
+          cursor: pointer;
+          border: none;
+          transition: all 0.2s;
+          white-space: nowrap;
+        }
+
+        .chat-btn {
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          color: white;
+        }
+
+        .chat-btn:hover {
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+          transform: translateY(-1px);
+        }
+
+        .profile-btn {
+          background: rgba(139, 92, 246, 0.2);
+          border: 1px solid rgba(139, 92, 246, 0.4);
+          color: #a78bfa;
+        }
+
+        .profile-btn:hover {
+          background: rgba(139, 92, 246, 0.3);
+          color: #c4b5fd;
+        }
+
+        .remove-btn {
+          background: rgba(239, 68, 68, 0.15);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #f87171;
+        }
+
+        .remove-btn:hover {
+          background: rgba(239, 68, 68, 0.3);
+          color: #fca5a5;
+        }
+
+        .remove-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .accept-btn {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+          font-size: 13px;
+          padding: 10px 20px;
+        }
+
+        .accept-btn:hover {
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+          transform: translateY(-1px);
+        }
+
+        .accept-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
+        }
+
+        .deny-btn {
+          background: rgba(239, 68, 68, 0.15);
+          border: 1px solid rgba(239, 68, 68, 0.4);
+          color: #f87171;
+          font-size: 13px;
+          padding: 10px 20px;
+        }
+
+        .deny-btn:hover {
+          background: rgba(239, 68, 68, 0.3);
+          color: #fca5a5;
+        }
+
+        .deny-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }

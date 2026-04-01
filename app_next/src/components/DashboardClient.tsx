@@ -194,12 +194,6 @@ export default function DashboardClient() {
                 <span className="detail-label">GAMES PLAYED</span>
                 <span className="detail-value">{getGamesPlayed()}</span>
               </div>
-              {/* <div className="detail-row">
-                <span className="detail-label">BEST SCORE</span>
-                <span className="detail-value score">
-                  {user.gamesAsPlayer[0]?.playerScore ?? "0"}
-                </span>
-              </div> */}
               <div className="detail-row">
                 <span className="detail-label">KILLS</span>
                 <span className="detail-value">{getKills()}</span>

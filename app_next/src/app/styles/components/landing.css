@@ -1,73 +1,3 @@
-/* ========== LANDING PAGE ========== */
-
-.landing-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, #0a0e27 0%, #1a1f3a 50%, #0f1423 100%);
-}
-
-.landing-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: 
-    linear-gradient(
-      180deg, 
-      rgba(10, 14, 39, 0.5) 0%, 
-      rgba(26, 31, 58, 0.2) 50%, 
-      rgba(15, 20, 35, 0.2) 100%
-    ),
-    url('../../../../public/tank2.jpeg');
-  animation: backgroundPulse 8s ease-in-out infinite alternate;
-  background-size: cover;
-  background-position: center; 
-  pointer-events: none;
-  z-index: 0;
-}
-
-.landing-content {
-  position: relative;
-  z-index: 10;
-  text-align: center;
-  padding: 40px 20px;
-  max-width: 800px;
-  width: 100%;
-}
-
-.landing-header {
-  margin-bottom: 60px;
-  animation: fadeInDown 1s ease-out;
-}
-
-.landing-logo {
-  font-size: 6rem;
-  margin-bottom: 20px;
-  filter: drop-shadow(0 0 30px rgba(0, 217, 255, 0.6));
-  animation: logoFloat 3s ease-in-out infinite;
-}
-
-.landing-title {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.landing-subtitle {
-  font-size: 1.2rem;
-  color: var(--menu-text);
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  opacity: 0.8;
-}
 
 .auth-buttons {
   display: flex;
@@ -135,12 +65,6 @@
   transform: translateX(10px) scale(1.02);
 }
 
-.btn-icon {
-  font-size: 3rem;
-  filter: drop-shadow(0 0 10px currentColor);
-  transition: transform 0.3s ease;
-}
-
 .auth-btn:hover .btn-icon {
   transform: scale(1.2) rotate(5deg);
 }
@@ -165,73 +89,6 @@
   text-transform: uppercase;
   text-shadow: 0 0 10px currentColor;
 }
-
-.btn-subtitle {
-  font-size: 0.9rem;
-  opacity: 0.7;
-  letter-spacing: 1px;
-  margin-top: 5px;
-}
-
-.features {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  flex-wrap: wrap;
-  animation: fadeIn 1s ease-out 0.6s backwards;
-  padding: 20px;
-  border-top: 1px solid rgba(0, 217, 255, 0.2);
-  border-bottom: 1px solid rgba(0, 217, 255, 0.2);
-}
-
-.feature {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  color: var(--menu-text);
-  transition: all 0.3s ease;
-}
-
-.feature:hover {
-  color: var(--neon-blue);
-  transform: translateY(-5px);
-}
-
-.feature-icon {
-  font-size: 2rem;
-  filter: drop-shadow(0 0 10px currentColor);
-}
-
-.feature-text {
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.landing-footer {
-  position: absolute;
-  bottom: 30px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  color: var(--menu-text);
-  font-size: 0.85rem;
-  opacity: 0.6;
-  z-index: 10;
-}
-
-.landing-footer a {
-  color: var(--neon-blue);
-  text-decoration: none;
-  transition: color 0.3s;
-}
-
-.landing-footer a:hover {
-  color: var(--orange);
-  text-decoration: underline;
-}
-
 /* ========== LEGAL PAGES (Privacy / Terms) ========== */
 
 .legal-page {

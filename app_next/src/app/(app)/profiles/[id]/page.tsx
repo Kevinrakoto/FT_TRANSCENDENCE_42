@@ -49,11 +49,8 @@ async function getUserProfile(userId: number) {
           orderBy: { createdAt: 'desc' },
           select: {
             id: true,
-            opponentId: true,
             winnerId: true,
             playerScore: true,
-            opponentScore: true,
-            duration: true,
             createdAt: true,
           },
         },
@@ -65,11 +62,8 @@ async function getUserProfile(userId: number) {
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        opponentId: true,
         winnerId: true,
         playerScore: true,
-        opponentScore: true,
-        duration: true,
         createdAt: true,
       },
     }),

@@ -18,8 +18,7 @@
 
 }
 
-.form-label,
-.signup-gg {
+.form-label {
   color: var(--orange);
   font-size: 0.75rem; 
   font-weight: 700;
@@ -65,47 +64,6 @@
   border-color: var(--neon-pink);
   box-shadow: 0 0 15px rgba(255, 0, 110, 0.3);
 }
-
-/* Color Picker */
-/* .color-picker-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(10, 14, 39, 0.6);
-  border: 2px solid rgba(0, 217, 255, 0.4);
-  border-radius: 6px;
-  padding: 8px 12px;
-  transition: all 0.3s ease;
-}
-
-.color-picker-wrapper:hover {
-  border-color: var(--neon-blue);
-  box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
-}
-
-.color-picker {
-  width: 60px;
-  height: 40px;
-  border: 2px solid var(--neon-blue);
-  border-radius: 4px;
-  cursor: pointer;
-  background: transparent;
-  transition: all 0.3s ease;
-}
-
-.color-picker:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px currentColor;
-}
-
-.color-value {
-  color: var(--neon-blue);
-  font-family: 'Courier New', monospace;
-  font-weight: 700;
-  font-size: 0.95rem;
-  letter-spacing: 1px;
-  text-shadow: 0 0 8px rgba(0, 217, 255, 0.5);
-} */
 
 /* Messages */
 .error-message {
@@ -313,86 +271,6 @@
   margin-bottom: 25px;
 }
 
-.vector-auth-buttons {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-/* Style des boutons (qui imitent les inputs de votre image) */
-.vector-btn {
-  width: 100%;
-  padding: 12px 20px;
-  border-radius: 25px;
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s ease;
-  letter-spacing: 1px;
-}
-
-/* Les boutons sombres qui ressemblent à des champs de texte */
-.btn-secondary {
-  background-color: #1f2329;
-  border: 1px solid #363c45;
-  color: #798392;
-  box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
-}
-.btn-secondary:hover {
-  border-color: #586372;
-  color: #aeb6c1;
-}
-.btn-icon {
-  margin-right: 12px;
-  font-size: 1.1rem;
-}
-
-/* Options (Checkbox et Mot de passe oublié) */
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.7rem;
-  color: #64707d;
-  margin: 5px 0;
-  padding: 0 5px;
-}
-.checkbox-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-.checkbox-container input {
-  accent-color: #2ec4b6;
-  width: 14px;
-  height: 14px;
-}
-.forgot-link {
-  cursor: pointer;
-}
-.forgot-link:hover {
-  color: #2ec4b6;
-}
-
-/* Bouton d'action principal (Le dégradé turquoise/violet) */
-.btn-primary {
-  background: linear-gradient(90deg, #12c2e9 0%, #c471ed 50%, #f64f59 100%);
-  color: white;
-  justify-content: center;
-  border: none;
-  margin-top: 5px;
-  width: 140px;
-  align-self: center;
-  box-shadow: 0 4px 15px rgba(196, 113, 237, 0.4);
-}
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(196, 113, 237, 0.6);
-}
 
 /* Footer */
 .vector-footer {
