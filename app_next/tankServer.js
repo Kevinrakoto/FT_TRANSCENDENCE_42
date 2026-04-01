@@ -12,10 +12,12 @@ module.exports = (io) => {
 
     gameNamespace.on('connection', (socket) => {
 
+		const userId = socket.handshake.auth.userId;
 		const username = socket.handshake.auth.username;
 		const tankColor = socket.handshake.auth.tankColor;
 		const gameMode = parseInt(socket.handshake.auth.gameMode || 2);
 
+		socket.data.userId = userId;
 		socket.data.username = username;
 		socket.data.tankColor = tankColor;
 
@@ -49,7 +51,7 @@ module.exports = (io) => {
 			const playerColors = originalMatchPlayers.map(p => p.data.tankColor);
             const mapNames = ['one', 'two', 'three'];
             const randomMap = mapNames[Math.floor(Math.random() * mapNames.length)];
-            console.log("Starting match on map:", randomMap);
+
 
 			originalMatchPlayers.forEach(p => {
 				p.data.score = 0;
@@ -71,6 +73,7 @@ module.exports = (io) => {
 
 					const leaderboard = matchPlayers.map( p => ({
 						playerNumber: originalMatchPlayers.indexOf(p) + 1,
+						userId: p.data.userId,
 						username: p.data.username,
 						score: p.data.score
 					}));
@@ -170,9 +173,9 @@ module.exports = (io) => {
 					if (matchEnded) return;
 					const playerSocket = originalMatchPlayers[data.number - 1];
 					playerSocket.data.score += 1;
-					console.log(playerSocket.data.username, "score:", playerSocket.data.score);
-					const leaderboard = matchPlayers.map( p => ({
+				const leaderboard = matchPlayers.map( p => ({
 						playerNumber: matchPlayers.indexOf(p) + 1,
+						userId: p.data.userId,
 						username: p.data.username,
 						score: p.data.score
 					}));
@@ -185,7 +188,12 @@ module.exports = (io) => {
 						matchEnded = true;
 						matchPlayers.forEach( p => {
 							p.emit('gameOver', {
-								leaderboard: leaderboard
+								leaderboard: matchPlayers.map( mp => ({
+									playerNumber: originalMatchPlayers.indexOf(mp) + 1,
+									userId: mp.data.userId,
+									username: mp.data.username,
+									score: mp.data.score
+								}))
 							});
 						});
 					}

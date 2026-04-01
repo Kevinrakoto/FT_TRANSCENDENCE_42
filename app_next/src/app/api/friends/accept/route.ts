@@ -67,6 +67,7 @@ export async function POST(req: Request) {
       { userId, friendshipId }
     )
 
+    
     await emitFriendNotification(result.friendship.senderId, 'friend-notification', {
       type: 'friend_accepted',
       friendshipId,

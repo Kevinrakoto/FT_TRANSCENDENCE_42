@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "FT Pong",
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
   icons: {
     icon: [
       { url: "/icon-192.svg", sizes: "192x192", type: "image/svg+xml" },

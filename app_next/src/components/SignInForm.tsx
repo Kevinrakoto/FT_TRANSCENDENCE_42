@@ -67,9 +67,11 @@ export default function SignInForm() {
               <form onSubmit={handleSubmit}>
                 {/* <div className="form-grid"> */}
                   <div className="form-group">
-                    <label className="form-label">Email</label>
+                    <label htmlFor="signin-email" className="form-label">Email</label>
                     <input
                       type="email"
+                      id="signin-email"
+                      name="email"
                       className="form-input"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -79,9 +81,11 @@ export default function SignInForm() {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Password</label>
+                    <label htmlFor="signin-password" className="form-label">Password</label>
                     <input
                       type="password"
+                      id="signin-password"
+                      name="password"
                       className="form-input"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}

@@ -403,7 +403,6 @@ export function launchGame(container, callbacks, userData, gameMode) {
 		});
 
 		socket.on('waiting', (data) => {
-			console.log(`Waiting for players: ${data.current}/${data.required}`);
 		});
 
 		socket.on('playerMoved', (data) => {

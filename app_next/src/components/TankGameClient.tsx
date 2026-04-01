@@ -24,7 +24,7 @@ export default function TankGameClient() {
     } catch (e) {
       return;
     }
-  import('@/app/(app)/tank-game/scripts/game.js').then(() => console.log('game script loaded'));
+  import('@/app/(app)/tank-game/scripts/game.js');
 }, [session, status, router]);
 
   return (

@@ -18,6 +18,7 @@ export default function ChatNotification() {
     toast,
     dismissToast,
   } = useChatNotifications()
+
   const [isOpen, setIsOpen] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [activeTab, setActiveTab] = useState<'messages' | 'requests' | 'activity'>('messages')
@@ -61,7 +62,7 @@ export default function ChatNotification() {
                 {toast.type === 'friend_accepted' && 'Friend Request Accepted'}
                 {toast.type === 'friend_denied' && 'Friend Request Declined'}
                 {toast.type === 'friend_removed' && 'Friend Removed'}
-                {toast.type === 'message' && 'New Message'}
+                {toast.type === 'message' && 'New Messages'}
               </p>
               <p className="text-gray-400 text-xs truncate">
                 {toast.message || `${toast.fromUsername} sent you a friend request`}
@@ -217,7 +218,13 @@ export default function ChatNotification() {
               <div className="max-h-80 overflow-y-auto">
                 {activityNotifications.length > 0 ? (
                   activityNotifications.slice(0, 10).map((notif) => (
-                    <div key={notif.id} className="p-3 border-b border-gray-700">
+                    <div 
+                      key={notif.id} 
+                      className="p-3 border-b border-gray-700 hover:bg-gray-800 transition-colors cursor-pointer"
+                      onClick={() => {
+                        markAsRead(notif.id)
+                      }}
+                    >
                       <div className="flex items-center gap-3">
                         <span className="text-xl">
                           {notif.type === 'friend_accepted' && '✅'}

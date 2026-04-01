@@ -74,10 +74,11 @@ export default function SignUpForm() {
           <form onSubmit={handleSubmit} className="auth-form">
 
             <div className="form-group">
-              <label htmlFor="username" className="form-label"> Username</label>
+              <label htmlFor="signup-username" className="form-label"> Username</label>
               <input
                 type="text"
-                id="username"
+                id="signup-username"
+                name="username"
                 className="form-input"
                 value={formData.username}
                 onChange={(e) => setFormData({...formData, username: e.target.value})}
@@ -89,10 +90,11 @@ export default function SignUpForm() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="email" className="form-label">Email</label>
+              <label htmlFor="signup-email" className="form-label">Email</label>
               <input
                 type="email"
-                id="email"
+                id="signup-email"
+                name="email"
                 className="form-input"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -102,10 +104,11 @@ export default function SignUpForm() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="password" className="form-label">Password</label>
+              <label htmlFor="signup-password" className="form-label">Password</label>
               <input
                 type="password"
-                id="password"
+                id="signup-password"
+                name="password"
                 className="form-input"
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -116,10 +119,11 @@ export default function SignUpForm() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="confirmPassword" className="signup-gg"> Confirm</label>
+              <label htmlFor="signup-confirm-password" className="signup-gg"> Confirm</label>
               <input
                 type="password"
-                id="confirmPassword"
+                id="signup-confirm-password"
+                name="confirmPassword"
                 className="form-input"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}

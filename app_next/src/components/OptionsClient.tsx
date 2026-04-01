@@ -61,7 +61,7 @@ export default function OptionsClient() {
 		}
 	}
 
-	const handleExport = () => {
+		const handleExport = () => {
 		window.open('/api/me/gdpr/export', '_blank');
 	}
 
