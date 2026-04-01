@@ -233,7 +233,7 @@ export default function MultiplayerGameClient() {
         })()}
 
         {/* LIVE HUD LEADERBOARD */}
-        <div className="absolute top-4 right-4 z-40 bg-black/60 text-white p-4 rounded-xl backdrop-blur-md border border-white/10 shadow-xl min-w-[200px]">
+        <div className="absolute bottom-4 right-4 z-40 bg-black/60 text-white p-4 rounded-xl backdrop-blur-md border border-white/10 shadow-xl min-w-[200px]">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"/>
                 Live Standings

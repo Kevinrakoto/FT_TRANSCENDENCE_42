@@ -118,8 +118,7 @@ enum FriendshipStatus {
 }
 
 enum ConversationType {
-  PRIVATE   
-  GROUP 
+  PRIVATE
 }
 
 model GameHistory {

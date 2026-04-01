@@ -1,15 +1,15 @@
-_This project has been created as part of the 42 curriculum by harakoto, kralison, frakotov, trasamiz, aandriam._
+*This project has been created as part of the 42 curriculum by harakoto, kralison, frakotov, trasamiz, aandriam.*
 
 # ft_transcendence
 
 ## Description
 
-**ft_transcendence** is a full-stack web application featuring a real-time multiplayer 3D tank battle game. Players can register, customize their tanks, challenge friends, chat in real-time, and compete on a global leaderboard. The project is built with Next.js (TypeScript), Prisma ORM, PostgreSQL, Socket.IO, and Three.js, all deployed via Docker with a hardened security stack (Nginx + ModSecurity WAF + HashiCorp Vault).
+**ft_transcendence** is a full-stack web application featuring a real-time multiplayer 3D tank battle game. Players can register, customize their tanks, challenge people, chat in real-time, and compete on a global leaderboard. The project is built with Next.js (TypeScript), Prisma ORM, PostgreSQL, Socket.IO, and Three.js, all deployed via Docker with a hardened security stack (Nginx + ModSecurity WAF + HashiCorp Vault).
 
 ### Key Features
 
 - Real-time multiplayer 3D tank game (Three.js + Socket.IO)
-- Solo mode with AI bot opponent
+- Training mode with AI bot opponent
 - Private chat system with typing indicators
 - Friends system (add, remove, block, online status)
 - User profiles with avatar and tank customization
@@ -17,7 +17,7 @@ _This project has been created as part of the 42 curriculum by harakoto, kraliso
 - Public REST API with API key authentication and rate limiting
 - In-app notification system
 - PWA (Progressive Web App) support
-- Swagger API documentation
+- API.md API documentation
 
 ---
 
@@ -25,8 +25,8 @@ _This project has been created as part of the 42 curriculum by harakoto, kraliso
 
 ### Prerequisites
 
-- Docker & Docker Compose
 - Make
+- Docker
 - OpenSSL (for self-signed certificate generation)
 - Latest stable Google Chrome
 
@@ -52,22 +52,10 @@ make all
 - `make down` — Stop containers
 - `make clean` — Stop containers, remove volumes and images
 - `make re` — Full restart (clean + all)
-- `make logs-app` — Follow application logs
-- `make logs-nginx` — Follow Nginx logs
-- `make logs-db` — Follow PostgreSQL logs
-- `make logs-vault` — Follow Vault logs
-- `make prod-build` — Build production Docker images
-- `make prod-up` — Start production containers
-- `make prod-down` — Stop production containers
 
 ### Environment Variables
 
-Secrets are managed by HashiCorp Vault at runtime. For local development, see `.env.example` for the required variables:
-
-```bash
-cp .env.example .env
-# Edit .env with your local values
-```
+Secrets are managed by HashiCorp Vault at runtime.
 
 ### Useful Commands
 
@@ -83,11 +71,11 @@ docker compose up --build
 
 ### Team Members and Roles
 
-- **harakoto** — PO,Tech Lead, Developer — Architecture decisions, backend API, Socket.IO real-time system, Docker infrastructure
-- **kralison** — Developer — Product vision, frontend development, UI/UX design, game integration
-- **frakotov** — PM, Developer — Project coordination, frontend components, feature implementation
-- **aandriam** — Developer — Feature development, testing
-- **trasamiz** — Developer — Security stack (Nginx, ModSecurity WAF, HashiCorp Vault)
+- **harakoto** — PO,Tech Lead, Developer — Architecture decisions, backend API, Socket.IO real-time system
+- **kralison** — Developer — Product vision, game integration, game designer, HUD in-game
+- **frakotov** — PM, Developer — Project coordination, feature implementation, frontend development and component, UI/UX design
+- **aandriam** — Developer — Feature development, testing , AI Developement
+- **trasamiz** — PM, Docker infrastructure, Developer — Security stack (Nginx, ModSecurity WAF, HashiCorp Vault)
 
 ---
 
@@ -119,19 +107,19 @@ docker compose up --build
 - **Three.js** — 3D rendering for the tank game
 - **Socket.IO Client** — Real-time bidirectional communication
 - **Lucide React** — Icon library
-- **Custom Design System** — 13 reusable UI components (Alert, Avatar, Badge, Button, Card, Dropdown, Input, Loader, Modal, Select, Tabs, Textarea, Toast)
+- **Custom Design System** — reusable UI components
 
 ### Backend
 
 - **Next.js API Routes** — RESTful API endpoints
-- **Custom HTTPS Server** (Node.js `https` module) — Secure server wrapping Next.js + Socket.IO
+- **Custom HTTPS Server** (Node.js `https` module)
 - **Socket.IO** — WebSocket server for real-time features
 - **NextAuth.js v4** — Authentication with JWT strategy
-- **bcryptjs** — Password hashing (cost 10)
+- **bcryptjs** — Password hashing
 
 ### Database
 
-- **PostgreSQL 15** — Relational database
+- **PostgreSQL** — Relational database
 - **Prisma ORM** — Type-safe database access and migrations
 
 **Why PostgreSQL**: Robust relational database with strong support for complex queries, transactions, and indexing — ideal for the social and game data models.
@@ -147,7 +135,7 @@ docker compose up --build
 ### Justification for Major Technical Choices
 
 - **Next.js**: Full-stack framework covering both frontend and backend, eliminating the need for a separate backend service. App Router provides modern routing with SSR support.
-- **Socket.IO**: Chosen for its reliability over raw WebSockets — automatic reconnection, room support, and fallback transports.
+- **Socket.IO**: Chosen for its reliability over raw WebSockets, room support, and fallback transports.
 - **Three.js**: Industry-standard 3D library for the browser, enabling immersive tank battle gameplay.
 - **Prisma**: Type-safe ORM with excellent TypeScript integration and migration tooling.
 - **Vault**: Industry-standard secrets management, ensuring credentials never touch the repository.
@@ -170,7 +158,7 @@ User ─┬──< Friendship >── User
 
 ### Models
 
-- **User** — Player accounts with auth credentials, profile info, game stats (xp, wins, kills, deaths, tankColor, tankLevel)
+- **User** — Player accounts with auth credentials, profile info, game stats
 - **Friendship** — Friend requests with status (PENDING/ACCEPTED/DECLINED/BLOCKED)
 - **Conversation** — Private conversations between two users
 - **ConversationParticipant** — Tracks user participation and last read timestamp
@@ -211,7 +199,7 @@ User ─┬──< Friendship >── User
 - **Match History** — View past games with scores and opponents — *frakotov*
 - **Notifications** — In-app alerts for friend requests, messages, games — *harakoto*
 - **Public API** — RESTful API with API key auth and rate limiting — *harakoto*
-- **Swagger Docs** — Interactive API documentation at `/docs` — *harakoto*
+- **API documentation** — Interactive API documentation at `/API.md` — *harakoto*
 - **PWA** — Installable app with service worker and manifest — *kralison*
 - **Privacy Policy** — Full privacy policy page — *kralison*
 - **Terms of Service** — Full terms of service page — *kralison*
@@ -256,7 +244,7 @@ Socket.IO powers online presence tracking, private chat, game matchmaking, and l
 Complete social system: private chat with typing indicators, user profiles, friend requests with accept/deny/block, online status tracking. Implemented by harakoto, frakotov.
 
 **Web - Public API (Major, 2pts)**
-RESTful API at `/api/public/*` with API key authentication , rate limiting (100 req/min), Swagger documentation at `/docs`, and multiple CRUD endpoints. Implemented by harakoto.
+RESTful API at `/api/public/*` with API key authentication , rate limiting (100 req/min), API documentation at `/API.md`, and multiple CRUD endpoints. Implemented by harakoto.
 
 **Web - ORM (Minor, 1pt)**
 Prisma ORM provides type-safe database access, schema management, and migrations for PostgreSQL. Implemented by harakoto , frakotov.
@@ -300,7 +288,6 @@ XP/level system, persistent game statistics (wins, kills, deaths, gamesPlayed), 
 - Socket.IO real-time server (online presence, chat, game events)
 - NextAuth.js authentication system
 - Public API with API key auth and rate limiting
-- Swagger/OpenAPI documentation
 - Notification system
 - HTTPS server configuration
 - Database schema design (Prisma)
