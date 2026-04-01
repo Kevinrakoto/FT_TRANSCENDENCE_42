@@ -157,10 +157,11 @@ export function launchGame(container, callbacks, userData, gameMode) {
 
 		if (!socket) {
 			socket = io('/tank-game', {
-				transports: ['polling', 'websocket'],
+				transports: ['websocket'],
 				path: '/socket.io',
 				rejectUnauthorized: false,
 				autoConnect: false,
+				reconnection: false,
 				auth: {
 					userId: userData.id,
 					username: userData.username,
@@ -482,10 +483,6 @@ export function launchGame(container, callbacks, userData, gameMode) {
 		socket.on('playerDisconnected', (data) => {
 			const enemy = remotePlayers[data.playerNumber];
 			if (enemy) {
-				if (enemy.userData.bullets) {
-					enemy.userData.bullets.forEach(bullet => scene.remove(bullet));
-					enemy.userData.bullets = [];
-				}
 				scene.remove(enemy);
 				delete remotePlayers[data.playerNumber];
 			}
@@ -598,7 +595,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 					child.material.map = null;
 					child.material.color.set(0xffffff);
 					child.material.needsUpdate = true;
-					setTimeout(() => {
+					const interval = setInterval(() => {
 						if (child.material) {
 							child.material.map = originalMap;
 							child.material.color.copy(originalColor);
@@ -607,7 +604,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 						if (playerhit.userData.health <= 0) {
 							playerhit.userData.dead = true;
 							playerhit.position.x = 200;
-							if (playerNumber === myPlayerNumber) {
+							if (playerNumber == myPlayerNumber) {
 								socket.emit('playerDied', {number: shooter});
 								respawn();
 							}

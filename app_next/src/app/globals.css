@@ -14,4 +14,9 @@
 @import "./styles/components/mode_selection.css";
 @import "./styles/components/dashboard.css";
 @import "./styles/components/leaderboard.css";
+@import "./styles/components/friendsClient.css";
+@import "./styles/components/frb.css";
+@import "./styles/components/privateChat.css";
+
+
 

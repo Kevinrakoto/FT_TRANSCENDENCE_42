@@ -26,20 +26,14 @@ export default function GameModePage() {
 
         <div className="mode-cards">
           <Link href="/game_mode/solo" className="mode-card solo-card">
-            <div className="mode-card-icon">🎯</div>
-            <h2 className="mode-card-title">SOLO</h2>
+            <h2 className="mode-card-title">TRAINING</h2>
             <p className="mode-card-description">
               Practice against AI bots<br/>
               Perfect your skills
             </p>
             <div className="mode-card-features">
-              <span className="feature-tag">⚡ Instant Start</span>
-              <span className="feature-tag">🤖 AI Opponents</span>
-              <span className="feature-tag">🏆 Earn XP</span>
-            </div>
-            <div className="mode-card-button">
-              <span>PLAY SOLO</span>
-              <span className="arrow">→</span>
+              <span className="feature-tag">Instant Start</span>
+              <span className="feature-tag">AI Opponents</span>
             </div>
           </Link>
 
@@ -54,10 +48,6 @@ export default function GameModePage() {
               <span className="feature-tag">Online Matchmaking</span>
               <span className="feature-tag">Real Players</span>
               <span className="feature-tag"> Ranked Mode</span>
-            </div>
-            <div className="mode-card-button">
-              <span>PLAY MULTIPLAYER</span>
-              <span className="arrow">→</span>
             </div>
           </Link>
         </div>

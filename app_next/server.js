@@ -20,19 +20,9 @@ const httpsOptions = {
 
 const onlinePlayers = new Map();
 
-const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET || 'internal-secret-change-me';
 const rateLimits = new Map();
 const RATE_LIMIT_WINDOW = 1000;
 const MAX_MESSAGES_PER_WINDOW = 20;
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimits) {
-    if (now > entry.resetTime) {
-      rateLimits.delete(key);
-    }
-  }
-}, 60000);
 
 function checkRateLimit(socketId, event) {
   const key = `${socketId}:${event}`;
@@ -82,12 +72,7 @@ app.prepare().then(() => {
       req.on('data', chunk => { body += chunk; });
       req.on('end', () => {
         try {
-          const { targetUserId, event, data, secret } = JSON.parse(body);
-          if (secret !== INTERNAL_API_SECRET) {
-            res.writeHead(403, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Forbidden' }));
-            return;
-          }
+          const { targetUserId, event, data } = JSON.parse(body);
           if (targetUserId && event) {
             const targetPlayer = onlinePlayers.get(String(targetUserId));
             if (targetPlayer) {
@@ -110,12 +95,7 @@ app.prepare().then(() => {
       req.on('data', chunk => { body += chunk; });
       req.on('end', () => {
         try {
-          const { userId, secret } = JSON.parse(body);
-          if (secret !== INTERNAL_API_SECRET) {
-            res.writeHead(403, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Forbidden' }));
-            return;
-          }
+          const { userId } = JSON.parse(body);
           if (userId) {
             const existingPlayer = onlinePlayers.get(String(userId));
             if (existingPlayer) {
@@ -176,17 +156,8 @@ app.prepare().then(() => {
         socketId: socket.id
       });
     } else {
-      const oldSocket = io.sockets.sockets.get(existingPlayer.socketId);
-      if (oldSocket) {
-        oldSocket.emit('force-logout', { reason: 'Another session opened for this account' });
-        oldSocket.disconnect(true);
-      }
-      onlinePlayers.delete(userData.userId);
-      onlinePlayers.set(userData.userId, {
-        userId: userData.userId,
-        username: userData.username,
-        socketId: socket.id,
-      });
+      socket.emit('force-logout', { reason: 'Another session opened for this account' });
+      socket.disconnect(true);
     }
   } else {
     onlinePlayers.set(userData.userId, {
@@ -214,10 +185,7 @@ app.prepare().then(() => {
     // --------------------------------------------------------------------
     
     socket.on('join-private-room', async (data) => {
-    if (!data?.conversationId) return;
-
-    const socketUserId = socket.handshake.auth.userId;
-    if (!socketUserId) return;
+    if (!data?.conversationId || !data?.userId) return;
 
     socket.join(String(data.conversationId));
     
@@ -239,21 +207,15 @@ app.prepare().then(() => {
     }
     
     socket.emit('room-participants', otherUserIds)
-    socket.to(roomKey).emit('user-joined', { userId: Number(socketUserId) })
+    socket.to(roomKey).emit('user-joined', { userId: Number(data.userId) })
     
     for (const otherUserId of otherUserIds) {
       socket.emit('user-joined', { userId: otherUserId })
     }
 });
     socket.on('private-message', async (data, callback) => {
-      if (!data?.conversationId || !data?.content) {
+      if (!data?.conversationId || !data?.content || !data?.userId) {
         if (callback) callback({ success: false, error: 'Invalid data' });
-        return;
-      }
-      
-      const socketUserId = socket.handshake.auth.userId;
-      if (!socketUserId) {
-        if (callback) callback({ success: false, error: 'Not authenticated' });
         return;
       }
       
@@ -272,7 +234,7 @@ app.prepare().then(() => {
       
       try {
         const conversationId = parseInt(data.conversationId);
-        const userId = Number(socketUserId);
+        const userId = parseInt(data.userId);
         
         const conversation = await prisma.conversation.findUnique({
           where: { id: conversationId },
@@ -303,8 +265,6 @@ app.prepare().then(() => {
         
         io.to(String(data.conversationId)).emit('new-message', message);
         
-        io.emit('new-message-global', message);
-        
         if (callback) callback({ success: true, message });
       } catch (error) {
         console.error('Error sending message:', error);
@@ -317,50 +277,33 @@ app.prepare().then(() => {
     });
     socket.on('typing', (data) => {
       if (!data?.conversationId) return;
-      const socketUserId = socket.handshake.auth.userId;
-      if (!socketUserId) return;
       socket.to(String(data.conversationId)).emit('user-typing', {
-        userId: Number(socketUserId),
+        userId: data.userId,
         isTyping: data.isTyping
       });
     });
     socket.on('profile-update', async (data) => {
-      if (!data?.updates) return;
+      if (!data?.userId || !data?.updates) return;
       
-      const socketUserId = socket.handshake.auth.userId;
-      if (!socketUserId) return;
-
-      const allowedFields = ['tankColor', 'avatar'];
-      const sanitizedUpdates = {};
-      for (const key of allowedFields) {
-        if (data.updates[key] !== undefined) {
-          sanitizedUpdates[key] = data.updates[key];
-        }
-      }
-      if (Object.keys(sanitizedUpdates).length === 0) return;
-
       try {
         await prisma.user.update({
-          where: { id: Number(socketUserId) },
-          data: sanitizedUpdates
+          where: { id: data.userId },
+          data: data.updates
         });
         
         io.emit('user-profile-updated', {
-          userId: Number(socketUserId),
-          ...sanitizedUpdates
+          userId: data.userId,
+          ...data.updates
         });
       } catch (error) {
         console.error('Error updating profile:', error);
       }
     });
     socket.on('mark-messages-read', async (data) => {
-      if (!data?.conversationId || !data?.messageIds) return;
-      
-      const socketUserId = socket.handshake.auth.userId;
-      if (!socketUserId) return;
+      if (!data?.conversationId || !data?.messageIds || !data?.userId) return;
       
       try {
-        const userIdInt = Number(socketUserId);
+        const userIdInt = parseInt(data.userId);
         for (const messageId of data.messageIds) {
           await prisma.messageRead.upsert({
             where: {
@@ -378,25 +321,24 @@ app.prepare().then(() => {
         }
         socket.to(String(data.conversationId)).emit('messages-read', {
           messageIds: data.messageIds,
-          userId: userIdInt
+          userId: data.userId
         });
       } catch (error) {
         console.error('Error marking messages as read:', error);
       }
     });
-    socket.on('player-disconnect', async () => {
-      const socketUserId = socket.handshake.auth.userId;
-      if (!socketUserId) return;
-      
-      const userIdStr = String(socketUserId);
-      onlinePlayers.delete(userIdStr);
-      io.emit('online-players-update', Array.from(onlinePlayers.values()));
-      io.emit('user-left', { userId: Number(socketUserId) });
-      
-      await prisma.user.update({
-        where: { id: Number(socketUserId) },
-        data: { isOnline: false, lastSeen: new Date() }
-      }).catch(err => console.error('Error updating offline status:', err));
+    socket.on('player-disconnect', async (data) => {
+      if (data?.userId) {
+        onlinePlayers.delete(data.userId)
+        io.emit('online-players-update', Array.from(onlinePlayers.values()))
+        io.emit('user-left', { userId: Number(data.userId) })
+        
+        await prisma.user.update({
+          where: { id: Number(data.userId) },
+          data: { isOnline: false, lastSeen: new Date() }
+        }).catch(err => console.error('Error updating offline status:', err));
+        
+      }
     })
 
     socket.on('disconnect', async () => {
@@ -428,7 +370,7 @@ app.prepare().then(() => {
   initTankGame(io);
 
   // --------------------------------------------------------------------------
-  server.listen(3000, (error) => {
+  server.listen(3000,'0.0.0.0',  (error) => {
   if (error) {
     console.error('Server startup error:', error);
   } else {

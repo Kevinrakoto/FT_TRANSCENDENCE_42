@@ -24,6 +24,8 @@ export default function MultiplayerGameClient() {
 			return ;
 		}
 
+		if (freshUserData) return;
+
 		async function fetchUserData() {
 			try {
 				const res = await fetch('/api/me');
@@ -41,7 +43,7 @@ export default function MultiplayerGameClient() {
 		}
 
 		fetchUserData();
-	}, [session, status, router]);
+	}, [session, status, router, freshUserData]);
 
 	useEffect(() => {
 		if (!gameMode || !gameContainerRef.current || !freshUserData) return;
@@ -56,23 +58,16 @@ export default function MultiplayerGameClient() {
 			return;
 		}
 
-		let resultsSaved = false;
 		const gameCallback = {
 			onGameStart: () => setIsGameRunning(true),
 			onGameOver: async (data) => {
 				setGameOverData(data)
-				if (resultsSaved) return;
-				resultsSaved = true;
 				try {
-					const myEntry = data.leaderboard.find(
-						(e: any) => e.userId === freshUserData?.id
-					);
-					if (!myEntry) return;
 					const res = await fetch('/api/game/results', {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({
-							leaderboard: [myEntry],
+							leaderboard: data.leaderboard,
 							duration: 0,
 							gameMode: gameMode
 						})
@@ -195,7 +190,7 @@ export default function MultiplayerGameClient() {
                         {/* Final Standings List */}
                         <div className="space-y-3 mb-8 relative z-10">
                             {sortedBoard.map((p: any, index: number) => (
-                                <div key={p.userId || p.username} className={`flex items-center justify-between p-4 rounded-xl border ${
+                                <div key={p.username} className={`flex items-center justify-between p-4 rounded-xl border ${
                                     index === 0 
                                         ? 'bg-yellow-500/10 border-yellow-500/50' 
                                         : 'bg-white/5 border-white/5'
@@ -245,10 +240,10 @@ export default function MultiplayerGameClient() {
             </h3>
             
             <div className="space-y-2">
-                {[...leaderboard]
+                {leaderboard
                     .sort((a, b) => b.score - a.score)
                     .map((p, index) => (
-                        <div key={p.userId || p.username} className={`flex items-center justify-between text-sm p-2 rounded-lg transition-colors ${
+                        <div key={p.username} className={`flex items-center justify-between text-sm p-2 rounded-lg transition-colors ${
                             session?.user?.username === p.username ? 'bg-white/10 ring-1 ring-white/20' : ''
                         }`}>
                             <div className="flex items-center gap-3">

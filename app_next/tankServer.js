@@ -15,18 +15,12 @@ module.exports = (io) => {
 		const userId = socket.handshake.auth.userId;
 		const username = socket.handshake.auth.username;
 		const tankColor = socket.handshake.auth.tankColor;
-		const gameMode = [2, 3, 4].includes(parseInt(socket.handshake.auth.gameMode))
-			? parseInt(socket.handshake.auth.gameMode)
-			: 2;
+		const gameMode = parseInt(socket.handshake.auth.gameMode || 2);
 
 		socket.data.userId = userId;
 		socket.data.username = username;
 		socket.data.tankColor = tankColor;
 
-		if (!lobbies[gameMode]) {
-			socket.emit('error', { message: 'Invalid game mode' });
-			return;
-		}
 		lobbies[gameMode].push(socket);
 
         socket.on('disconnect', () => {
@@ -41,7 +35,7 @@ module.exports = (io) => {
             let matchPlayers = [...originalMatchPlayers];
 			let matchEnded = false;
 
-			let activePowerup = false;
+			let activePowerup = true;
 			let powerupTimer = null;
 
 			function startPowerupTimer() {
@@ -52,7 +46,6 @@ module.exports = (io) => {
 					matchPlayers.forEach(p => p.emit('spawnPowerup'));
 				}, 20000);
 			}
-			startPowerupTimer();
 			const playerNames = originalMatchPlayers.map(p => p.data.username);
 			const playerColors = originalMatchPlayers.map(p => p.data.tankColor);
             const mapNames = ['one', 'two', 'three'];
@@ -93,7 +86,6 @@ module.exports = (io) => {
 
 					if (matchPlayers.length <= 1) {
 						matchEnded = true;
-						if (powerupTimer) clearTimeout(powerupTimer);
 						if (matchPlayers.length === 1) {
 							matchPlayers[0].emit('gameOver', {
 								leaderboard: leaderboard
@@ -108,15 +100,16 @@ module.exports = (io) => {
 					playerColors: playerColors,
                     numberOfPlayer: gameMode
                 });
+				playerSocket.emit('spawnPowerup');
 				playerSocket.emit('leaderboardUpdate', initialLeaderboard);
                 playerSocket.on('move', (data) => {
 					if (activePowerup && Math.abs(data.x) < 0.8 && Math.abs(data.z) < 0.8) {
-						let randomPowerup = Math.random();
+						let randomSeed = Math.random();
 						activePowerup = false;
 						matchPlayers.forEach(other => {
 							other.emit('collectPowerup', {
 								playerNumber: playerNumber,
-								seed: randomPowerup
+								seed: randomSeed
 							});
 						});
 						startPowerupTimer();
@@ -178,13 +171,10 @@ module.exports = (io) => {
 				});
 				playerSocket.on('playerDied', (data) => {
 					if (matchEnded) return;
-					const killerIndex = parseInt(data.number) - 1;
-					if (killerIndex < 0 || killerIndex >= originalMatchPlayers.length) return;
-					const killer = originalMatchPlayers[killerIndex];
-					if (!killer) return;
-					killer.data.score += 1;
+					const playerSocket = originalMatchPlayers[data.number - 1];
+					playerSocket.data.score += 1;
 				const leaderboard = matchPlayers.map( p => ({
-						playerNumber: originalMatchPlayers.indexOf(p) + 1,
+						playerNumber: matchPlayers.indexOf(p) + 1,
 						userId: p.data.userId,
 						username: p.data.username,
 						score: p.data.score
@@ -194,9 +184,8 @@ module.exports = (io) => {
 						p.emit('leaderboardUpdate', leaderboard);
 					});
 
-					if (killer.data.score >= 5) {
+					if (playerSocket.data.score >= 5) {
 						matchEnded = true;
-						if (powerupTimer) clearTimeout(powerupTimer);
 						matchPlayers.forEach( p => {
 							p.emit('gameOver', {
 								leaderboard: matchPlayers.map( mp => ({

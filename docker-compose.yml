@@ -29,6 +29,7 @@ services:
   
   postgres:
     build: ./security/postgres
+    container_name: postgres
     networks:
       - transcendence_net
     volumes:

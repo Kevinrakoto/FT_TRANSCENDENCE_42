@@ -3,7 +3,9 @@
 
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXTAUTH_URL || 'https://localhost:8443';
+const SOCKET_URL = typeof window !== 'undefined' 
+  ? window.location.origin 
+  : (process.env.NEXTAUTH_URL || 'https://localhost:3000');
 
 interface QueuedMessage {
   event: string;
@@ -51,6 +53,9 @@ function initializeSocket(): Socket {
     reconnectionDelayMax: 30000,
     timeout: 10000,
     transports: ['websocket', 'polling'],
+    secure: true,
+    rejectUnauthorized: false,
+    path: '/socket.io/',
   });
 
   socketInstance.on('connect', () => {
@@ -85,14 +90,6 @@ function initializeSocket(): Socket {
   });
 
   socketInstance.on('pong', () => {
-  });
-
-  socketInstance.on('force-logout', (data: { reason: string }) => {
-    console.warn('[SocketClient] Force logout:', data.reason);
-    disconnectSocket();
-    if (typeof window !== 'undefined') {
-      window.location.href = '/signin';
-    }
   });
 
   isSocketInitialized = true;
