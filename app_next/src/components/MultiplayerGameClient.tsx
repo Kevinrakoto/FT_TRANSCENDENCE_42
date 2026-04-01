@@ -63,11 +63,12 @@ export default function MultiplayerGameClient() {
 			onGameOver: async (data) => {
 				setGameOverData(data)
 				try {
+                    const sortedBoard = [...data.leaderboard].sort((a: any, b: any) => b.score - a.score);
 					const res = await fetch('/api/game/results', {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({
-							leaderboard: data.leaderboard,
+							leaderboard: sortedBoard,
 							duration: 0,
 							gameMode: gameMode
 						})

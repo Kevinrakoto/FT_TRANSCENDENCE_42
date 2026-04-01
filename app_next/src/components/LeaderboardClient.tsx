@@ -165,12 +165,6 @@ export default function LeaderboardClient({ initialPlayers }: LeaderboardClientP
             >
               GAMES
             </button>
-            <button
-              className={`sort-button ${sortBy === 'kills' ? 'active' : ''}`}
-              onClick={() => setSortBy('kills')}
-            >
-              kills
-            </button>
           </div>
 
           <div className="leaderboard-list">

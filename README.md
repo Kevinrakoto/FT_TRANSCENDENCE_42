@@ -164,9 +164,9 @@ User ─┬──< Friendship >── User
 - **ConversationParticipant** — Tracks user participation and last read timestamp
 - **Message** — Chat messages with content and timestamps
 - **MessageRead** — Read receipts for messages
-- **GameHistory** — Match records with scores, opponent, winner, duration
+- **GameHistory** — Match records with scores, winner
 - **ApiKey** — API keys for public API access with expiration
-- **Notification** — In-app notifications (friend requests, messages, game events)
+- **Notification** — In-app notifications
 
 ### Enums
 
@@ -186,28 +186,28 @@ User ─┬──< Friendship >── User
 ## Features List
 
 - **User Registration & Login** — Email/password auth with bcrypt hashing and JWT sessions — *harakoto*
-- **User Profiles** — Profile page with avatar, username, game stats — *kralison*
+- **User Profiles** — Profile page with avatar, username, game stats — *frakotov - kralison*
 - **Tank Customization** — Choose tank color before playing — *kralison*
 - **Friends System** — Send/accept/deny/block friend requests, online status — *harakoto*
 - **Private Chat** — Real-time messaging between friends via Socket.IO — *harakoto*
 - **Chat Typing Indicators** — See when someone is typing — *harakoto*
 - **Online Players** — Live list of connected players — *harakoto*
 - **3D Tank Game** — Three.js-based tank battle with 2D grid map — *kralison, aandriam*
-- **Multiplayer Mode** — Real-time 1v1 tank battles over Socket.IO — *harakoto, kralison*
+- **Multiplayer Mode** — Real-time 1v1,1v1v1,1v1v1v1 tank battles over Socket.IO — *kralison*
 - **Solo Mode** — Play against an AI bot opponent — *aandriam*
 - **Leaderboard** — Ranked by wins, kills, XP with sortable columns — *frakotov*
-- **Match History** — View past games with scores and opponents — *frakotov*
-- **Notifications** — In-app alerts for friend requests, messages, games — *harakoto*
+- **Match History** — View past games with scores — *frakotov*
+- **Notifications** — In-app alerts for friend requests(accept, deny, blocked) — *harakoto*
 - **Public API** — RESTful API with API key auth and rate limiting — *harakoto*
 - **API documentation** — Interactive API documentation at `/API.md` — *harakoto*
-- **PWA** — Installable app with service worker and manifest — *kralison*
-- **Privacy Policy** — Full privacy policy page — *kralison*
-- **Terms of Service** — Full terms of service page — *kralison*
-- **Docker Deployment** — Single-command deployment via Make + Docker Compose — *harakoto*
-- **HTTPS** — End-to-end encryption with self-signed certificates — *harakoto*
+- **PWA** — Installable app with service worker and manifest — *harakoto*
+- **Privacy Policy** — Full privacy policy page — *frakotov*
+- **Terms of Service** — Full terms of service page — *frakotov*
+- **Docker Deployment** — Single-command deployment via Make + Docker Compose — *trasamiz, harakoto*
+- **HTTPS** — End-to-end encryption with self-signed certificates — *harakoto, trasamiz*
 - **WAF/ModSecurity** — Web Application Firewall with OWASP CRS — *trasamiz*
 - **Vault Integration** — Automated secrets management — *trasamiz*
-- **Design System** — 13 reusable UI components — *frakotov*
+- **Design System** — reusable UI components — *frakotov*
 
 ---
 
@@ -215,22 +215,25 @@ User ─┬──< Friendship >── User
 
 ### Points Summary
 
-1. Use a framework for frontend AND backend (Next.js) — Web — 2 pts (Major) — ✅
-2. User interaction (chat, profiles, friends) — Web — 2 pts (Major) — ✅
-3. Public API with auth, rate limiting, docs — Web — 2 pts (Major) — ✅
-5. ORM for database (Prisma) — Web — 1 pt (Minor) — ✅
-6. Notification system — Web — 1 pt (Minor) — ✅
-7. PWA with offline support — Web — 1 pt (Minor) — ✅
-8. Custom design system (13 components) — Web — 1 pt (Minor) — ✅
-9. Standard user management and authentication — User Management — 2 pts (Major) — ✅
-10. Game statistics and match history — User Management — 1 pt (Minor) — ✅
-11. WAF/ModSecurity + HashiCorp Vault — Cybersecurity — 2 pts (Major) — ✅
-12. Web-based multiplayer game (Tank Battle) — Gaming — 2 pts (Major) — ✅
-13. Remote players (real-time 1v1) — Gaming — 2 pts (Major) — ✅
-14. Game customization (tank color, solo AI mode) — Gaming — 1 pt (Minor) — ✅
-15. Gamification (XP, levels, leaderboard) — Gaming — 1 pt (Minor) — ✅
+1. Use a framework for frontend AND backend (Next.js) — Web — 2 pts (Major)
+2. User interaction (chat, profiles, friends) — Web — 2 pts (Major)
+3. Public API with auth, rate limiting, docs — Web — 2 pts (Major)
+5. ORM for database (Prisma) — Web — 1 pt (Minor)
+6. Notification system — Web — 1 pt (Minor)
+7. PWA with offline support — Web — 1 pt (Minor)
+8. Custom design system (10+ components) — Web — 1 pt (Minor)
+9. Standard user management and authentication — User Management — 2 pts (Major)
+10. Game statistics and match history — User Management — 1 pt (Minor)
+11. WAF/ModSecurity + HashiCorp Vault — Cybersecurity — 2 pts (Major)
+12. Web-based multiplayer game (Tank Battle) — Gaming — 2 pts (Major)
+13. Multiplayer game (more than two players) — Gaming — 2 pts (Major)
+14. Advanced 3D graphics using Three.js  — Gaming — 2 pts (Major)
+15. Game customization options — Gaming — 1 pt (Minor)
+16. Gamification (XP, levels, leaderboard) — Gaming — 1 pt (Minor)
+17. Data export and import functionality - Data and Analytics - 1 pt (Minor)
+18. GDPR compliance features - Data and Analytics - 1 pt (Minor)
 
-**Total validated: 21 points**
+**Total validated: 24 points**
 
 ### Module Details
 
@@ -253,13 +256,13 @@ Prisma ORM provides type-safe database access, schema management, and migrations
 In-app notification system supporting friend requests, message alerts, and game events. Stored in database with read/unread state. Full CRUD: creation via `createNotification()` in friend routes, update (mark as read) via PUT, deletion via DELETE endpoint. Implemented by harakoto.
 
 **Web - PWA (Minor, 1pt)**
-Progressive Web App with `manifest.json`, service worker (`sw.js`), and installability support. Implemented by kralison.
+Progressive Web App with `manifest.json`, service worker (`sw.js`), and installability support. Implemented by harakoto.
 
 **Web - Design System (Minor, 1pt)**
-13 reusable components: Alert, Avatar, Badge, Button, Card, Dropdown, Input, Loader, Modal, Select, Tabs, Textarea, Toast. Uses `class-variance-authority` for variant management. Implemented by kralison.
+11 reusable components: auth, buttons, dasboard, decorations, frb,friendsClients, landing, leaderboard, mode_selection, navigation, privateChat, animations, base, responsive, variables. Implemented by frakotov.
 
 **User Management (Major, 2pts)**
-Email/password authentication with bcrypt hashing, JWT sessions via NextAuth.js, profile updates, avatar support, friend system with online status, single-session enforcement. Implemented by harakoto, kralison.
+Email/password authentication with bcrypt hashing, JWT sessions via NextAuth.js, profile updates, avatar support, friend system with online status, single-session enforcement. Implemented by harakoto.
 
 **User Management - Game Stats (Minor, 1pt)**
 XP tracking, win/loss records, kill/death stats, game history with match details, sortable leaderboard. Implemented by frakotov, aandriam.
@@ -270,15 +273,18 @@ Nginx with ModSecurity (OWASP CRS) as WAF, HashiCorp Vault managing all secrets 
 **Gaming - Web-based Game (Major, 2pts)**
 3D tank battle game rendered with Three.js, 2D grid-based map system, GLTF tank models, real-time combat mechanics. Implemented by kralison, aandriam.
 
-**Gaming - Remote Players (Major, 2pts)**
-Real-time 1v1 multiplayer over Socket.IO with matchmaking lobby, live game state sync, and disconnect handling. Implemented by kralison.
-
 **Gaming - Customization (Minor, 1pt)**
-Tank color selection, solo mode with AI bot opponent that simulates human-like behavior. Implemented by aandriam, kralison.
+Tank color selection, traning mode with AI bot opponent that simulates human-like behavior. Implemented by aandriam, kralison.
 
 **Gaming - Gamification (Minor, 1pt)**
-XP/level system, persistent game statistics (wins, kills, deaths, gamesPlayed), sortable leaderboard, and GameHistory model. **Note**: The data model and UI are fully implemented, but the post-game persistence (updating XP/wins in database after multiplayer matches) is not yet wired in `tankServer.js`. The leaderboard and stats display work correctly with existing data. Implemented by frakotov, harakoto.
+XP/level system, persistent game statistics (wins, kills, deaths, gamesPlayed), sortable leaderboard, and GameHistory model. **Note**: The data model and UI are fully implemented, but the post-game persistence (updating XP/wins in database after multiplayer matches) is not yet wired in `tankServer.js`. The leaderboard and stats display work correctly with existing data. Implemented by frakotov, aandriam.
 
+
+**Data Management - Export/Import (Minor, 1pt)**
+Multi-format export (JSON, CSV, XML) with async processing. Import with file validation, preview, conflict resolution, and error reporting. Bulk operations with multi-select UI and progress tracking. Implemented by trasamiz.
+
+**GDPR - Data Portability & Deletion (Minor, 1pt)**
+Data request system with cooldown, async processing, and expiring download links. Account deletion with confirmation and grace period. Confirmation emails for all data operations. Note: Email service and async queue wiring pending. Implemented by trasamiz.
 ---
 
 ## Individual Contributions

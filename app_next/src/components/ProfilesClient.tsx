@@ -12,7 +12,12 @@ interface UserProfile {
   username: string
   avatar: string | null
   tankLevel: number
-  gamesAsPlayer: number
+  gamesAsPlayer: Array<{
+    id: number
+    playerScore: number
+    winnerId: number
+    createdAt: string
+  }>
   isOnline: boolean
 }
 
@@ -231,7 +236,7 @@ return (
             <div className="flex justify-between items-center py-3 border-b border-white/10">
               <span className="text-gray-300">Games Played</span>
               <span className="text-white font-medium">
-                {profile?.gamesAsPlayer || 0}
+                {profile?.gamesAsPlayer.length || 0}
               </span>
             </div>
 

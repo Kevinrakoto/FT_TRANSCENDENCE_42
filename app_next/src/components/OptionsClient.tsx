@@ -72,7 +72,7 @@ export default function OptionsClient() {
 		try {
 			const res = await fetch('/api/me/gdpr/delete', { method: 'DELETE' });
 			if (res.ok) {
-				signOut({ callbackUrl: '/signin' });
+				window.location.href = '/';
 			} else {
 				const data = await res.json();
 				showNotif(data.error || "Failed to delete account", "error");

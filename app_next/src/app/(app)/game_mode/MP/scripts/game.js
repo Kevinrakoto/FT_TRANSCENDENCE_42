@@ -1,6 +1,9 @@
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { io } from 'socket.io-client';
 
 export function launchGame(container, callbacks, userData, gameMode) {
@@ -23,6 +26,10 @@ export function launchGame(container, callbacks, userData, gameMode) {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setAnimationLoop( animate );
 	container.appendChild( renderer.domElement );
+
+	const composer = new EffectComposer(renderer);
+	composer.addPass(new RenderPass(scene, camera));
+	composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.15, 0.2, 0.98));
 
 	const ambient = new THREE.AmbientLight( {color: 0xffffff} );
 	scene.add(ambient);
@@ -192,7 +199,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 
 		if (loaded === false) {
 			if (isGameRunning === false) {
-				renderer.render( scene, camera );
+				composer.render();
 			}
 			return;
 		}
@@ -345,7 +352,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 			powerupMesh.rotation.x += 2 * delta;
 		}
 
-		renderer.render( scene, camera );
+		composer.render();
 	}
 
 	function setupSocketListener() {
@@ -727,7 +734,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 
 		player.userData.isReloading = true;
 
-		const reloadTime = 10000;
+		const reloadTime = 3000;
 		const updateInterval = 50;
 		let elapsed = 0;
 

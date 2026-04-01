@@ -218,7 +218,7 @@ export function WebSocketProvider({
         console.warn('[WebSocket] Force logout:', data.reason);
         cleanupSocket();
         setStatus('disconnected');
-        signOut({ callbackUrl: '/signin' });
+        window.location.href = '/';
       });
 
       socketRef.current = newSocket;

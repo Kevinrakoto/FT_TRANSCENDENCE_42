@@ -18,12 +18,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid leaderboard data' }, { status: 400 })
     }
 
-    const myEntry = leaderboard.find((e: any) => Number(e.userId) === userId)
+    let myEntry = leaderboard.find((e: any) => Number(e.userId) === userId)
+    if (leaderboard.length === 1)
+        return
     if (!myEntry) {
       return NextResponse.json({ error: 'User not found in leaderboard' }, { status: 400 })
     }
 
-    const isWinner = myEntry.playerNumber === 1
+    const isWinner = myEntry.score === 5
     const killScore = myEntry.score || 0
 
     await prisma.$transaction(async (tx) => {

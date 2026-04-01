@@ -40,7 +40,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       connectedRef.current = false
       setIsConnected(false)
       socket.disconnect()
-      signOut({ callbackUrl: '/signin' })
+     window.location.href = '/';
     }
 
     const onFriendNotification = (data: any) => {
