@@ -1,5 +1,5 @@
 // src/hooks/useChatSocket.tsx
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { getSocket } from '@/lib/socket-client'
 import { Message, User } from '@/types/chat'
 
@@ -14,18 +14,17 @@ export function useChatSocket({ conversationId, currentUser }: UseChatSocketProp
   const [messages, setMessages] = useState<Message[]>([])
   const [isOtherTyping, setIsOtherTyping] = useState(false)
   const [onlineUsers, setOnlineUsers] = useState<number[]>([])
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     function onConnect() {
       setIsConnected(true)
-      console.log('Socket connected')
       socket.emit('authenticate', currentUser.id)
       socket.emit('join-private-room', { conversationId, userId: currentUser.id })
     }
 
     function onDisconnect() {
       setIsConnected(false)
-      console.log('Socket disconnected')
     }
 
     function onNewMessage(message: Message) {
@@ -50,7 +49,7 @@ export function useChatSocket({ conversationId, currentUser }: UseChatSocketProp
       }
     }
 
-    // Si le socket est déjà connecté, on exécute immédiatement les émissions nécessaires
+    // If socket is already connected, immediately execute the necessary emissions
     if (socket.connected) {
       socket.emit('authenticate', currentUser.id)
       socket.emit('join-private-room', { conversationId, userId: currentUser.id })
@@ -92,7 +91,6 @@ export function useChatSocket({ conversationId, currentUser }: UseChatSocketProp
       user: {
         id: currentUser.id,
         username: currentUser.username,
-        tankName: currentUser.tankName,
         tankColor: currentUser.tankColor
       }
     })
@@ -100,7 +98,8 @@ export function useChatSocket({ conversationId, currentUser }: UseChatSocketProp
 
   const startTyping = useCallback(() => {
     socket.emit('typing', { conversationId, isTyping: true })
-    setTimeout(() => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    typingTimeoutRef.current = setTimeout(() => {
       socket.emit('typing', { conversationId, isTyping: false })
     }, 2000)
   }, [conversationId, socket])

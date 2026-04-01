@@ -1,35 +1,126 @@
-const lobby = [];
-const MAX_PLAYER = 2;
+
+const lobbies = {
+	2: [],
+	3: [],
+	4: []
+};
+
+const players = new Map();
 
 module.exports = (io) => {
     const gameNamespace = io.of('/tank-game');
 
     gameNamespace.on('connection', (socket) => {
-        console.log('Player joined lobbyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy:', socket.id);
-        lobby.push(socket);
+
+		const userId = socket.handshake.auth.userId;
+		const username = socket.handshake.auth.username;
+		const tankColor = socket.handshake.auth.tankColor;
+		const gameMode = [2, 3, 4].includes(parseInt(socket.handshake.auth.gameMode))
+			? parseInt(socket.handshake.auth.gameMode)
+			: 2;
+
+		socket.data.userId = userId;
+		socket.data.username = username;
+		socket.data.tankColor = tankColor;
+
+		if (!lobbies[gameMode]) {
+			socket.emit('error', { message: 'Invalid game mode' });
+			return;
+		}
+		lobbies[gameMode].push(socket);
 
         socket.on('disconnect', () => {
-            const index = lobby.indexOf(socket);
+            const index = lobbies[gameMode].indexOf(socket);
             if (index !== -1) {
-                lobby.splice(index, 1);
+                lobbies[gameMode].splice(index, 1);
             }
         });
 
-        if (lobby.length >= MAX_PLAYER) {
-            const matchPlayers = lobby.splice(0, MAX_PLAYER);
+        if (lobbies[gameMode].length >= gameMode) {
+			const originalMatchPlayers = lobbies[gameMode].splice(0, gameMode);
+            let matchPlayers = [...originalMatchPlayers];
+			let matchEnded = false;
+
+			let activePowerup = false;
+			let powerupTimer = null;
+
+			function startPowerupTimer() {
+				if (powerupTimer) clearTimeout(powerupTimer);
+				powerupTimer = setTimeout(() => {
+					if (matchEnded) return;
+					activePowerup = true;
+					matchPlayers.forEach(p => p.emit('spawnPowerup'));
+				}, 20000);
+			}
+			startPowerupTimer();
+			const playerNames = originalMatchPlayers.map(p => p.data.username);
+			const playerColors = originalMatchPlayers.map(p => p.data.tankColor);
             const mapNames = ['one', 'two', 'three'];
             const randomMap = mapNames[Math.floor(Math.random() * mapNames.length)];
-            console.log("Starting match on map:", randomMap);
 
-            matchPlayers.forEach((playerSocket, index) => {
+
+			originalMatchPlayers.forEach(p => {
+				p.data.score = 0;
+			});
+
+            originalMatchPlayers.forEach((playerSocket, index) => {
                 const playerNumber = index + 1;
-                
+               
+				const initialLeaderboard = originalMatchPlayers.map( p => ({
+					playerNumber: originalMatchPlayers.indexOf(p) + 1,
+					username: p.data.username,
+					score: 0
+				}));
+
+				playerSocket.on('disconnect', () => {
+					matchPlayers = matchPlayers.filter(p => p.id !== playerSocket.id);
+
+					if (matchEnded) return;
+
+					const leaderboard = matchPlayers.map( p => ({
+						playerNumber: originalMatchPlayers.indexOf(p) + 1,
+						userId: p.data.userId,
+						username: p.data.username,
+						score: p.data.score
+					}));
+
+					matchPlayers.forEach( (other) => {
+						other.emit('playerDisconnected', {
+							playerNumber: playerNumber
+						});
+						other.emit('leaderboardUpdate', leaderboard);
+					});
+
+					if (matchPlayers.length <= 1) {
+						matchEnded = true;
+						if (powerupTimer) clearTimeout(powerupTimer);
+						if (matchPlayers.length === 1) {
+							matchPlayers[0].emit('gameOver', {
+								leaderboard: leaderboard
+							});
+						}
+					}
+				});
                 playerSocket.emit('gameStart', {
                     map: randomMap,
                     myPlayerNumber: playerNumber,
-                    numberOfPlayer: MAX_PLAYER
+					playerNames: playerNames,
+					playerColors: playerColors,
+                    numberOfPlayer: gameMode
                 });
+				playerSocket.emit('leaderboardUpdate', initialLeaderboard);
                 playerSocket.on('move', (data) => {
+					if (activePowerup && Math.abs(data.x) < 0.8 && Math.abs(data.z) < 0.8) {
+						let randomPowerup = Math.random();
+						activePowerup = false;
+						matchPlayers.forEach(other => {
+							other.emit('collectPowerup', {
+								playerNumber: playerNumber,
+								seed: randomPowerup
+							});
+						});
+						startPowerupTimer();
+					}
                     matchPlayers.forEach((other) => {
                         if (other.id !== playerSocket.id) {
                             other.emit('playerMoved', {
@@ -55,7 +146,8 @@ module.exports = (io) => {
 					matchPlayers.forEach((other) => {
 						if (other.id !== playerSocket.id) {
 							other.emit('playerShot', {
-								playerNumber: data.playerNumber
+								playerNumber: data.playerNumber,
+								shooter: data.shooter
 							});
 						}
 					});
@@ -68,7 +160,8 @@ module.exports = (io) => {
 								x: data.x,
 								y: data.y,
 								z: data.z,
-								dir: data.dir
+								dir: data.dir,
+								owner: data.owner
 							});
 						}
 					});
@@ -83,10 +176,54 @@ module.exports = (io) => {
 						}
 					});
 				});
+				playerSocket.on('playerDied', (data) => {
+					if (matchEnded) return;
+					const killerIndex = parseInt(data.number) - 1;
+					if (killerIndex < 0 || killerIndex >= originalMatchPlayers.length) return;
+					const killer = originalMatchPlayers[killerIndex];
+					if (!killer) return;
+					killer.data.score += 1;
+				const leaderboard = matchPlayers.map( p => ({
+						playerNumber: originalMatchPlayers.indexOf(p) + 1,
+						userId: p.data.userId,
+						username: p.data.username,
+						score: p.data.score
+					}));
+
+					matchPlayers.forEach( p => {
+						p.emit('leaderboardUpdate', leaderboard);
+					});
+
+					if (killer.data.score >= 5) {
+						matchEnded = true;
+						if (powerupTimer) clearTimeout(powerupTimer);
+						matchPlayers.forEach( p => {
+							p.emit('gameOver', {
+								leaderboard: matchPlayers.map( mp => ({
+									playerNumber: originalMatchPlayers.indexOf(mp) + 1,
+									userId: mp.data.userId,
+									username: mp.data.username,
+									score: mp.data.score
+								}))
+							});
+						});
+					}
+				});
+				playerSocket.on('reload', () => {
+					matchPlayers.forEach((other) => {
+						if (other.id !== playerSocket.id) {
+							other.emit('playerReloading', {
+								playerNumber: playerNumber
+							});
+						}
+					});
+				});
 			});
-		}
-        else {
-            socket.emit('waiting', {current: lobby.length, required: MAX_PLAYER});
-        }
+		} else {
+            socket.emit('waiting', {
+				current: lobbies[gameMode].length,
+				required: gameMode
+			});
+    	}
     });
 };

@@ -1,6 +1,5 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from "next"
-import { ClientProviders } from "@/components/ClientProviders"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -12,14 +11,16 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "FT Pong",
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon-192.svg", sizes: "192x192", type: "image/svg+xml" },
+      { url: "/icon-192.svg", sizes: "512x512", type: "image/svg+xml" },
     ],
     apple: [
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-192.svg", sizes: "192x192", type: "image/svg+xml" },
     ],
   },
 }
@@ -39,20 +40,18 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icon-192.svg" />
       </head>
       <body>
-        <ClientProviders>
-          {children}
-        </ClientProviders>
+        {children}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
                   navigator.serviceWorker.register('/sw.js')
-                    .then((reg) => console.log('SW registered:', reg.scope))
-                    .catch((err) => console.log('SW registration failed:', err));
+                    .then(() => {})
+                    .catch(() => {});
                 });
               }
             `,

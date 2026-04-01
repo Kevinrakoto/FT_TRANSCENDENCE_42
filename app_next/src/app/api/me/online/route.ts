@@ -15,7 +15,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { isOnline } = body
+    const isOnline = Boolean(body.isOnline)
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
@@ -59,6 +59,13 @@ export async function GET() {
         lastSeen: true
       }
     })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
 
     return NextResponse.json(user)
   } catch (error) {

@@ -1,11 +1,11 @@
 // app/api/me/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { prisma } from '@/lib/prisma'
+import { emitSocketEvent } from '@/lib/notifications'
 
-
-const db = new PrismaClient()
+const db = prisma
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,8 +23,11 @@ export async function GET(request: NextRequest) {
         email: true,
         username: true,
         avatar: true,
-        tankName: true,
         tankLevel: true,
+        tankColor: true,
+        xp: true,
+        wins: true,
+        gamesPlayed: true,
         gamesAsPlayer: true,
         isOnline: true,
         lastSeen: true
@@ -43,6 +46,57 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { error: 'Invalid token' },
       { status: 401 }
+    )
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { tankColor } = body
+
+    const updatedUser = await db.user.update({
+      where: { id: session.user.id },
+      data: {
+        ...(tankColor && { tankColor }),
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        avatar: true,
+        tankLevel: true,
+        tankColor: true,
+        xp: true,
+        wins: true,
+        gamesPlayed: true,
+        isOnline: true,
+        lastSeen: true
+      },
+    })
+
+    if (tankColor) {
+      emitSocketEvent('user-profile-updated', {
+        userId: session.user.id,
+        tankColor,
+      })
+    }
+
+    return NextResponse.json({ user: updatedUser })
+
+  } catch (error) {
+    console.error('Error updating user:', error)
+    return NextResponse.json(
+      { error: 'Failed to update user' },
+      { status: 500 }
     )
   }
 }

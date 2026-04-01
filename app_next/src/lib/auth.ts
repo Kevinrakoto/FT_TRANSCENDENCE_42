@@ -10,11 +10,11 @@ export const authOptions: NextAuthOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Mot de passe", type: "password" }
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email et mot de passe requis")
+           throw new Error("Email and password required")
         }
 
         const user = await prisma.user.findUnique({
@@ -22,28 +22,44 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user || !user.password) {
-          throw new Error("Utilisateur non trouvé")
+           throw new Error("User not found")
         }
 
         const isValid = await bcrypt.compare(credentials.password, user.password)
 
         if (!isValid) {
-          throw new Error("Mot de passe incorrect")
+           throw new Error("Incorrect password")
         }
 
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { isOnline: true, lastSeen: new Date() }
-      })
-      
-      return {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        avatar: user.avatar,
-        tankName: user.tankName,
-        tankColor: user.tankColor
-      }
+        // If user is already online, force the old session to disconnect
+        if (user.isOnline) {
+          try {
+            const https = await import('https')
+            const agent = new https.Agent({ rejectUnauthorized: false })
+            await fetch('https://localhost:3000/api/force-logout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: user.id, secret: process.env.INTERNAL_API_SECRET || 'internal-secret-change-me' }),
+              // @ts-ignore - Node.js fetch supports agent
+              agent,
+            })
+          } catch (e) {
+            // Old session may not have an active socket - safe to ignore
+          }
+        }
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { isOnline: true, lastSeen: new Date() }
+        })
+        
+        return {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          avatar: user.avatar,
+          tankColor: user.tankColor
+        }
       }
     })
   ],
@@ -53,7 +69,6 @@ export const authOptions: NextAuthOptions = {
         token.id = Number(user.id)
         token.username = user.username
         token.avatar = user.avatar
-        token.tankName = user.tankName
         token.tankColor = user.tankColor
       }
       return token
@@ -65,24 +80,26 @@ export const authOptions: NextAuthOptions = {
           id: token.id,
           username: token.username,
           avatar: token.avatar,
-          tankName: token.tankName,
           tankColor: token.tankColor
         }
       }
       return session
     }
   },
-  events: {
-    async signOut({ token }) {
-      if (token?.id) {
-        const { prisma } = await import('@/lib/prisma')
-        await prisma.user.update({
-          where: { id: token.id },
-          data: { isOnline: false, lastSeen: new Date() }
-        })
-      }
-    }
-  },
+   events: {
+     async signOut({ token }) {
+       if (token?.id) {
+         try {
+           await prisma.user.update({
+             where: { id: token.id },
+             data: { isOnline: false, lastSeen: new Date() }
+           })
+         } catch (error) {
+           console.error('Error in signOut event:', error)
+         }
+       }
+     }
+   },
   session: {
     strategy: "jwt"
   },

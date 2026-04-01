@@ -3,7 +3,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useChatSocket } from '@/hooks/useChatSocket'
+import { chatSocket } from '@/lib/socket-client'
 import { User, Message } from '@/types/chat'
+import { useUserProfileCache } from '@/components/UserProfileProvider'
 
 interface Props {
   conversationId: number
@@ -14,7 +16,11 @@ interface Props {
 export default function PrivateChat({ conversationId, currentUser, otherUser }: Props) {
   const [inputMessage, setInputMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [sentFeedback, setSentFeedback] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [displayOtherUser, setDisplayOtherUser] = useState(otherUser)
+  
+  const { getProfile } = useUserProfileCache()
   
   const {
     messages,
@@ -37,8 +43,15 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
         const res = await fetch(`/api/conversations/${conversationId}/messages`)
         if (res.ok) {
           const data = await res.json()
-          console.log('Messages received:', data)
           setMessages(data)
+          
+          const unreadIds = data
+            .filter((m: any) => !m.read && m.userId !== currentUser.id)
+            .map((m: any) => m.id.toString())
+          
+          if (unreadIds.length > 0) {
+            chatSocket.markAsRead(conversationId, unreadIds, String(currentUser.id))
+          }
         }
       } catch (error) {
         console.error('Error loading messages:', error)
@@ -48,7 +61,48 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
     }
 
     fetchMessages()
-  }, [conversationId, setMessages])
+  }, [conversationId, setMessages, currentUser.id])
+
+  useEffect(() => {
+    const updatedProfile = getProfile(otherUser.id)
+    if (updatedProfile) {
+      setDisplayOtherUser(prev => ({
+        ...prev,
+        username: updatedProfile.username || prev.username,
+        avatar: updatedProfile.avatar !== undefined ? updatedProfile.avatar : prev.avatar,
+        tankColor: updatedProfile.tankColor !== undefined ? updatedProfile.tankColor : prev.tankColor,
+      }))
+    }
+  }, [getProfile, otherUser.id])
+
+  useEffect(() => {
+    const handleProfileUpdate = (e: CustomEvent) => {
+      const data = e.detail
+      if (data.userId === otherUser.id) {
+        setDisplayOtherUser(prev => ({
+          ...prev,
+          username: data.username !== undefined ? data.username : prev.username,
+          avatar: data.avatar !== undefined ? data.avatar : prev.avatar,
+          tankColor: data.tankColor !== undefined ? data.tankColor : prev.tankColor,
+        }))
+      }
+      setMessages((prev: Message[]) => prev.map((msg: Message) => {
+        if (msg.userId === data.userId) {
+          return {
+            ...msg,
+            user: {
+              ...msg.user,
+              username: data.username !== undefined ? data.username : msg.user?.username,
+              tankColor: data.tankColor !== undefined ? data.tankColor : msg.user?.tankColor,
+            }
+          }
+        }
+        return msg
+      }))
+    }
+    window.addEventListener('user-profile-updated', handleProfileUpdate as EventListener)
+    return () => window.removeEventListener('user-profile-updated', handleProfileUpdate as EventListener)
+  }, [otherUser.id])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -60,6 +114,8 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
     
     sendMessage(inputMessage)
     setInputMessage('')
+    setSentFeedback(true)
+    setTimeout(() => setSentFeedback(false), 1500)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -87,24 +143,24 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
       <div className="chat-header">
         <div className="chat-user-info">
           <div className="avatar-wrapper">
-            {otherUser.avatar ? (
+            {displayOtherUser.avatar ? (
               <img 
-                src={otherUser.avatar} 
+                src={displayOtherUser.avatar} 
                 alt="Avatar"
                 className="user-avatar"
               />
             ) : (
               <div 
                 className="user-avatar avatar-placeholder"
-                style={{ backgroundColor: otherUser.tankColor }}
+                style={{ backgroundColor: displayOtherUser.tankColor }}
               >
-                {otherUser.tankName?.charAt(0) || otherUser.username?.charAt(0)}
+                {displayOtherUser.username?.charAt(0)}
               </div>
             )}
             <div className={`status-dot ${isOtherOnline ? 'online' : 'offline'}`} />
           </div>
           <div className="user-details">
-            <h3 className="user-name">{otherUser.tankName || otherUser.username}</h3>
+            <h3 className="user-name">{displayOtherUser.username}</h3>
             <p className="user-status">
               {isOtherTyping ? (
                 <span className="typing">typing...</span>
@@ -127,7 +183,7 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
             <div className="message-bubble">
               {msg.userId !== currentUser.id && (
                 <p className="message-sender">
-                  {msg.user?.tankName || msg.user?.username}
+                  {msg.user?.username}
                 </p>
               )}
               <p className="message-content">{msg.content}</p>
@@ -152,6 +208,14 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
       </div>
 
       <form onSubmit={handleSubmit} className="chat-input-container">
+        {sentFeedback && (
+          <div className="sent-feedback">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            Sent!
+          </div>
+        )}
         <input
           type="text"
           value={inputMessage}
@@ -171,7 +235,7 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
         </button>
       </form>
 
-      <style jsx>{`
+      <style>{`
         .chat-container {
           display: flex;
           flex-direction: column;
@@ -383,6 +447,7 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
           padding: 16px 20px;
           background: rgba(30, 30, 40, 0.95);
           border-top: 1px solid rgba(255, 255, 255, 0.1);
+          position: relative;
         }
 
         .chat-input {
@@ -428,6 +493,32 @@ export default function PrivateChat({ conversationId, currentUser, otherUser }: 
         .send-button:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+        }
+
+        .sent-feedback {
+          position: absolute;
+          top: -30px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 12px;
+          background: rgba(16, 185, 129, 0.2);
+          border: 1px solid rgba(16, 185, 129, 0.4);
+          border-radius: 6px;
+          color: #34d399;
+          font-size: 12px;
+          font-weight: 600;
+          animation: fadeInOut 1.5s ease;
+          pointer-events: none;
+        }
+
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: translateX(-50%) translateY(5px); }
+          15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(-5px); }
         }
       `}</style>
     </div>

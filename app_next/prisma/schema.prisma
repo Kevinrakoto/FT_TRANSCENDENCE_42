@@ -1,7 +1,7 @@
 // prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-1.1.x"]
+  binaryTargets = ["native"]
 }
 
 datasource db {
@@ -18,10 +18,11 @@ model User {
   isOnline    Boolean @default(false)
   lastSeen    DateTime?
   tankColor   String @default("#00ff00")
-  tankName    String @default("")
   tankLevel   Int    @default(1)
   xp          Int    @default(0)
   wins        Int    @default(0)
+  kills       Int    @default(0)
+  deaths      Int    @default(0)
   gamesPlayed Int    @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -36,6 +37,10 @@ model User {
   messageReads MessageRead[]
   apiKeys ApiKey[]
   notifications Notification[]
+
+  @@index([kills(sort: Desc)])
+  @@index([wins(sort: Desc)])
+  @@index([xp(sort: Desc)])
 }
 
 model Friendship {
@@ -59,11 +64,10 @@ model Conversation {
   
   user1Id   Int?
   user2Id   Int?
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  // Relations
   participants ConversationParticipant[]
   messages     Message[]
   @@unique([user1Id, user2Id])
@@ -121,11 +125,8 @@ enum ConversationType {
 model GameHistory {
   id          Int      @id @default(autoincrement())
   playerId    Int
-  opponentId  Int?
   winnerId    Int?
   playerScore Int      @default(0)
-  opponentScore Int?
-  duration    Int
   createdAt   DateTime @default(now())
 
   player   User   @relation("PlayerGames", fields: [playerId], references: [id])
@@ -164,6 +165,7 @@ model Notification {
 enum NotificationType {
   FRIEND_REQUEST
   FRIEND_ACCEPTED
+  FRIEND_DENIED
   FRIEND_REMOVED
   MESSAGE_RECEIVED
   GAME_INVITE

@@ -14,73 +14,184 @@ const handle = app.getRequestHandler();
 const initTankGame = require('./tankServer');
 
 const httpsOptions = {
-  key: fs.readFileSync('./certificates/private-key.pem'),
-  cert: fs.readFileSync('./certificates/certificate.pem'),
+  key: fs.readFileSync('/app/certificates/private-key.pem'),
+  cert: fs.readFileSync('/app/certificates/cert.pem'),
 };
 
 const onlinePlayers = new Map();
 
+const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET || 'internal-secret-change-me';
+const rateLimits = new Map();
+const RATE_LIMIT_WINDOW = 1000;
+const MAX_MESSAGES_PER_WINDOW = 20;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimits) {
+    if (now > entry.resetTime) {
+      rateLimits.delete(key);
+    }
+  }
+}, 60000);
+
+function checkRateLimit(socketId, event) {
+  const key = `${socketId}:${event}`;
+  const now = Date.now();
+  
+  const entry = rateLimits.get(key);
+  if (!entry || now > entry.resetTime) {
+    rateLimits.set(key, { count: 0, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  if (entry.count >= MAX_MESSAGES_PER_WINDOW) {
+    console.warn(`[RATE LIMIT] Socket ${socketId} exceeded limit for ${event}`);
+    return false;
+  }
+  
+  entry.count++;
+  return true;
+}
+
+function sanitizeMessage(message) {
+  if (typeof message !== 'string') return '';
+  return message.trim().slice(0, 1000);
+}
+
+function validateMessage(message) {
+  if (!message || typeof message !== 'string') return { valid: false, error: 'Invalid message' };
+  const trimmed = message.trim();
+  if (trimmed.length === 0) return { valid: false, error: 'Empty message' };
+  if (trimmed.length > 1000) return { valid: false, error: 'Message too long' };
+  return { valid: true };
+}
+
 function logOnlinePlayers(context) {
-  console.log(`\n=== 👥 Joueurs connectés [${context}] ===`);
   if (onlinePlayers.size === 0) {
-    console.log('Aucun joueur connecté');
   } else {
-    console.log(`Total: ${onlinePlayers.size} joueur(s)`);
     onlinePlayers.forEach((player, userId) => {
-      console.log(`  • ID: (${userId}) - Socket: ${player.socketId} - Tank: ${player.tankName || 'Aucun'}`);
     });
   }
-  console.log('=====================================\n');
 }
 
 app.prepare().then(() => {
   const server = createServer(httpsOptions, (req, res) => {
+    // Internal endpoint for API routes to emit Socket.IO events
+    if (req.method === 'POST' && req.url === '/api/emit-friend-notification') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const { targetUserId, event, data, secret } = JSON.parse(body);
+          if (secret !== INTERNAL_API_SECRET) {
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Forbidden' }));
+            return;
+          }
+          if (targetUserId && event) {
+            const targetPlayer = onlinePlayers.get(String(targetUserId));
+            if (targetPlayer) {
+              io.to(targetPlayer.socketId).emit(event, data);
+            }
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (e) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed' }));
+        }
+      });
+      return;
+    }
+
+    // Internal endpoint to force-disconnect an old session
+    if (req.method === 'POST' && req.url === '/api/force-logout') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const { userId, secret } = JSON.parse(body);
+          if (secret !== INTERNAL_API_SECRET) {
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Forbidden' }));
+            return;
+          }
+          if (userId) {
+            const existingPlayer = onlinePlayers.get(String(userId));
+            if (existingPlayer) {
+              // Find the socket and force disconnect it
+              const oldSocket = io.sockets.sockets.get(existingPlayer.socketId);
+              if (oldSocket) {
+                oldSocket.emit('force-logout', { reason: 'Another session opened for this account' });
+                oldSocket.disconnect(true);
+              }
+              onlinePlayers.delete(String(userId));
+              io.emit('online-players-update', Array.from(onlinePlayers.values()));
+              io.emit('user-left', { userId: Number(userId) });
+            }
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (e) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed' }));
+        }
+      });
+      return;
+    }
+
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
   });
 
   const io = new Server(server, {
     cors: {
-      origin: '*', // À sécuriser en prod (ex: domaine + localhost)
+      origin: '*',
       methods: ['GET', 'POST'],
     },
   });
 
+  // Expose io to API routes via global
+  global.__socketIO = io;
+  global.__onlinePlayers = onlinePlayers;
+
   io.on('connection', (socket) => {
-    
-    // --------------------------------------------------------------------
-    // GESTION DES JOUEURS CONNECTÉS (pour la liste online + demandes d'ami)
-    // --------------------------------------------------------------------
-    
+
+    socket.on('ping', (data, callback) => {
+      if (callback) callback();
+    });
+  
     socket.on('join-game', (userData) => {
   if (!userData || !userData.userId) {
-    console.warn('Tentative de join-game sans userId/username', userData.userId);
     return;
   }
-  
-  console.log('Nouvelles connexion Socket.IO →', socket.id);
   
   const existingPlayer = onlinePlayers.get(userData.userId);
   
   if (existingPlayer) {
     if (existingPlayer.socketId === socket.id) {
-      console.log(`🔄 Reconnexion du même socket pour ${userData.userId}`);
       onlinePlayers.set(userData.userId, {
         ...existingPlayer,
         ...userData,
         socketId: socket.id
       });
     } else {
-      console.log(`⚠️  Conflit: ${userData.userId} déjà connecté avec un autre socket`);
-      socket.emit('dbl_connex', { message: 'Ce compte est déjà connecté ailleurs.' });
-      socket.disconnect(true);
-      return;
+      const oldSocket = io.sockets.sockets.get(existingPlayer.socketId);
+      if (oldSocket) {
+        oldSocket.emit('force-logout', { reason: 'Another session opened for this account' });
+        oldSocket.disconnect(true);
+      }
+      onlinePlayers.delete(userData.userId);
+      onlinePlayers.set(userData.userId, {
+        userId: userData.userId,
+        username: userData.username,
+        socketId: socket.id,
+      });
     }
   } else {
     onlinePlayers.set(userData.userId, {
       userId: userData.userId,
       username: userData.username,
-      tankName: userData.tankName || null,
       socketId: socket.id,
     });
   }
@@ -90,28 +201,25 @@ app.prepare().then(() => {
     data: { isOnline: true }
   }).catch(err => console.error('Error updating online status:', err));
 
-  console.log(`Joueur connecté: ${userData.userId} (${userData.userId})`);
   io.emit('online-players-update', Array.from(onlinePlayers.values()));
   io.emit('user-joined', { userId: Number(userData.userId) });
 });
-
-    // --------------------------------------------------------------------
-    // DEMANDER LA LISTE DES JOUEURS EN LIGNE
-    // --------------------------------------------------------------------
-    
+ 
     socket.on('request-online-players', () => {
       socket.emit('online-players-update', Array.from(onlinePlayers.values()));
     });
 
     // --------------------------------------------------------------------
-    // CHAT PRIVÉ
+    // PRIVATE chAT
     // --------------------------------------------------------------------
     
     socket.on('join-private-room', async (data) => {
-    if (!data?.conversationId || !data?.userId) return;
+    if (!data?.conversationId) return;
+
+    const socketUserId = socket.handshake.auth.userId;
+    if (!socketUserId) return;
 
     socket.join(String(data.conversationId));
-    console.log(`Socket ${socket.id} a rejoint la room ${data.conversationId}`);
     
     socket.emit('online-players-update', Array.from(onlinePlayers.values()));
     
@@ -131,136 +239,167 @@ app.prepare().then(() => {
     }
     
     socket.emit('room-participants', otherUserIds)
-    socket.to(roomKey).emit('user-joined', { userId: Number(data.userId) })
+    socket.to(roomKey).emit('user-joined', { userId: Number(socketUserId) })
     
     for (const otherUserId of otherUserIds) {
       socket.emit('user-joined', { userId: otherUserId })
     }
 });
-
-    // --------------------------------------------------------------------
-    // ENVOI DE MESSAGE PRIVÉ
-    // --------------------------------------------------------------------
-    
-    socket.on('private-message', async (data) => {
-      if (!data?.conversationId || !data?.content || !data?.userId) return;
+    socket.on('private-message', async (data, callback) => {
+      if (!data?.conversationId || !data?.content) {
+        if (callback) callback({ success: false, error: 'Invalid data' });
+        return;
+      }
+      
+      const socketUserId = socket.handshake.auth.userId;
+      if (!socketUserId) {
+        if (callback) callback({ success: false, error: 'Not authenticated' });
+        return;
+      }
+      
+      if (!checkRateLimit(socket.id, 'private-message')) {
+        if (callback) callback({ success: false, error: 'Rate limited' });
+        return;
+      }
+      
+      const { valid, error } = validateMessage(data.content);
+      if (!valid) {
+        if (callback) callback({ success: false, error });
+        return;
+      }
+      
+      const sanitizedContent = sanitizeMessage(data.content);
       
       try {
+        const conversationId = parseInt(data.conversationId);
+        const userId = Number(socketUserId);
+        
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: conversationId },
+          include: {
+            participants: {
+              where: { userId: userId }
+            }
+          }
+        });
+        
+        if (!conversation || conversation.participants.length === 0) {
+          if (callback) callback({ success: false, error: 'Conversation not found or access denied' });
+          return;
+        }
+        
         const message = await prisma.message.create({
           data: {
-            content: data.content,
-            conversationId: parseInt(data.conversationId),
-            userId: parseInt(data.userId),
+            content: sanitizedContent,
+            conversationId: conversationId,
+            userId: userId,
           },
           include: {
             user: {
-              select: { id: true, username: true, tankName: true }
+              select: { id: true, username: true }
             }
           }
         });
         
         io.to(String(data.conversationId)).emit('new-message', message);
+        
+        io.emit('new-message-global', message);
+        
+        if (callback) callback({ success: true, message });
       } catch (error) {
         console.error('Error sending message:', error);
+        if (callback) callback({ success: false, error: 'Failed to send message' });
       }
     });
-
-    // --------------------------------------------------------------------
-    // QUITTER UNE ROOM PRIVÉE
-    // --------------------------------------------------------------------
-    
     socket.on('leave-private-room', (data) => {
       if (!data?.conversationId) return;
       socket.leave(String(data.conversationId));
-      console.log(`Socket ${socket.id} left room ${data.conversationId}`);
     });
-
-    // --------------------------------------------------------------------
-    // INDICATEUR DE FRAPE
-    // --------------------------------------------------------------------
-    
     socket.on('typing', (data) => {
       if (!data?.conversationId) return;
+      const socketUserId = socket.handshake.auth.userId;
+      if (!socketUserId) return;
       socket.to(String(data.conversationId)).emit('user-typing', {
-        userId: data.userId,
+        userId: Number(socketUserId),
         isTyping: data.isTyping
       });
     });
-
-    // --------------------------------------------------------------------
-    // MISE À JOUR PROFIL/AVATAR EN TEMPS RÉEL
-    // --------------------------------------------------------------------
-    
     socket.on('profile-update', async (data) => {
-      if (!data?.userId || !data?.updates) return;
+      if (!data?.updates) return;
       
+      const socketUserId = socket.handshake.auth.userId;
+      if (!socketUserId) return;
+
+      const allowedFields = ['tankColor', 'avatar'];
+      const sanitizedUpdates = {};
+      for (const key of allowedFields) {
+        if (data.updates[key] !== undefined) {
+          sanitizedUpdates[key] = data.updates[key];
+        }
+      }
+      if (Object.keys(sanitizedUpdates).length === 0) return;
+
       try {
         await prisma.user.update({
-          where: { id: data.userId },
-          data: data.updates
+          where: { id: Number(socketUserId) },
+          data: sanitizedUpdates
         });
         
         io.emit('user-profile-updated', {
-          userId: data.userId,
-          ...data.updates
+          userId: Number(socketUserId),
+          ...sanitizedUpdates
         });
       } catch (error) {
         console.error('Error updating profile:', error);
       }
     });
-
-    // --------------------------------------------------------------------
-    // MARQUER LES MESSAGES COMME LU
-    // --------------------------------------------------------------------
-    
     socket.on('mark-messages-read', async (data) => {
-      if (!data?.conversationId || !data?.messageIds || !data?.userId) return;
+      if (!data?.conversationId || !data?.messageIds) return;
+      
+      const socketUserId = socket.handshake.auth.userId;
+      if (!socketUserId) return;
       
       try {
+        const userIdInt = Number(socketUserId);
         for (const messageId of data.messageIds) {
           await prisma.messageRead.upsert({
             where: {
               messageId_userId: {
                 messageId: parseInt(messageId),
-                userId: data.userId
+                userId: userIdInt
               }
             },
             update: { readAt: new Date() },
             create: {
               messageId: parseInt(messageId),
-              userId: data.userId
+              userId: userIdInt
             }
           });
         }
         socket.to(String(data.conversationId)).emit('messages-read', {
           messageIds: data.messageIds,
-          userId: data.userId
+          userId: userIdInt
         });
       } catch (error) {
         console.error('Error marking messages as read:', error);
       }
     });
-
-    // --------------------------------------------------------------------
-    // DÉCONNEXION → nettoyage
-    // --------------------------------------------------------------------
-    socket.on('player-disconnect', async (data) => {
-      if (data?.userId) {
-        onlinePlayers.delete(data.userId)
-        io.emit('online-players-update', Array.from(onlinePlayers.values()))
-        io.emit('user-left', { userId: Number(data.userId) })
-        
-        await prisma.user.update({
-          where: { id: Number(data.userId) },
-          data: { isOnline: false, lastSeen: new Date() }
-        }).catch(err => console.error('Error updating offline status:', err));
-        
-        console.log(`Joueur déconnecté manuellement: ${data.userId}`)
-      }
+    socket.on('player-disconnect', async () => {
+      const socketUserId = socket.handshake.auth.userId;
+      if (!socketUserId) return;
+      
+      const userIdStr = String(socketUserId);
+      onlinePlayers.delete(userIdStr);
+      io.emit('online-players-update', Array.from(onlinePlayers.values()));
+      io.emit('user-left', { userId: Number(socketUserId) });
+      
+      await prisma.user.update({
+        where: { id: Number(socketUserId) },
+        data: { isOnline: false, lastSeen: new Date() }
+      }).catch(err => console.error('Error updating offline status:', err));
     })
 
     socket.on('disconnect', async () => {
-        console.log('Client déconnecté →', socket.id);
 
         let disconnectedUserId = null;
 
@@ -273,7 +412,6 @@ app.prepare().then(() => {
         }
 
         if (disconnectedUserId) {
-          console.log(`Joueur déconnecté: ${disconnectedUserId}`);
           io.emit('online-players-update', Array.from(onlinePlayers.values()));
           io.emit('user-left', { userId: Number(disconnectedUserId) });
           
@@ -292,9 +430,9 @@ app.prepare().then(() => {
   // --------------------------------------------------------------------------
   server.listen(3000, (error) => {
   if (error) {
-    console.error('Erreur démarrage serveur:', error);
+    console.error('Server startup error:', error);
   } else {
-    console.log('> Serveur prêt sur https://localhost:3000');
+    console.log('Server ready on https://localhost:8443')
   }
   });
 
