@@ -10,6 +10,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 	let numberOfPlayer = 2;
 	let remotePlayers = {};
 	let isGameRunning = false;
+	let powerupMesh = null;
 
 	const scene = new THREE.Scene();
 
@@ -40,7 +41,6 @@ export function launchGame(container, callbacks, userData, gameMode) {
 	let lastPressed = null;
 	let bulldir = 's';
 	let spaceReleased = true;
-	let reloadSpeed = 1200;
 
 	const onResize = () => {
 		camera.aspect = window.innerWidth / window.innerHeight;
@@ -339,6 +339,11 @@ export function launchGame(container, callbacks, userData, gameMode) {
 			});
 		}
 
+		if (powerupMesh) {
+			powerupMesh.rotation.y += 2 * delta;
+			powerupMesh.rotation.x += 2 * delta;
+		}
+
 		renderer.render( scene, camera );
 	}
 
@@ -398,7 +403,6 @@ export function launchGame(container, callbacks, userData, gameMode) {
 		});
 
 		socket.on('waiting', (data) => {
-			console.log(`Waiting for players: ${data.current}/${data.required}`);
 		});
 
 		socket.on('playerMoved', (data) => {
@@ -480,6 +484,62 @@ export function launchGame(container, callbacks, userData, gameMode) {
 			if (enemy) {
 				scene.remove(enemy);
 				delete remotePlayers[data.playerNumber];
+			}
+		});
+
+		socket.on('spawnPowerup', () => {
+			if (!powerupMesh) {
+				const geometry = new THREE.OctahedronGeometry(0.4);
+				const material = new THREE.MeshStandardMaterial({color: 0xff69b4});
+				powerupMesh = new THREE.Mesh(geometry, material);
+				powerupMesh.position.set(0, 0.5, 0);
+				scene.add(powerupMesh);
+			}
+		});
+
+		socket.on('collectPowerup', (data) => {
+			if (powerupMesh) {
+				scene.remove(powerupMesh);
+				powerupMesh = null;
+			}
+
+			let thePlayer;
+			if (data.playerNumber == myPlayerNumber) thePlayer = player;
+			else thePlayer = remotePlayers[data.playerNumber];
+
+			if (thePlayer && thePlayer.userData.dead === false) {
+				let validPowerup = [2];
+
+				if (thePlayer.userData.health < thePlayer.userData.maxHealth) {
+					validPowerup.push(1);
+				}
+
+				if (thePlayer.userData.ammo < thePlayer.userData.maxAmmo && thePlayer.userData.isReloading === false) {
+					validPowerup.push(0);
+				}
+
+				const randomPowerup = validPowerup[Math.floor(data.seed * validPowerup.length)];
+
+				if (randomPowerup === 0) {
+					thePlayer.userData.ammo = thePlayer.userData.maxAmmo;
+					const ammoBar = thePlayer.getObjectByName('ammoBar');
+					if (ammoBar) {
+						updateAmmoBar(ammoBar, thePlayer.userData.ammo, thePlayer.userData.maxAmmo, 0);
+					}
+				} else if (randomPowerup === 1) {
+					thePlayer.userData.health = thePlayer.userData.maxHealth;
+					const healthBar = thePlayer.getObjectByName('healthBar')
+					if (healthBar) {
+						updateHealthBar(healthBar, thePlayer.userData.health,
+						thePlayer.userData.maxHealth);
+					}
+				} else if (randomPowerup === 2) {
+					thePlayer.userData.speed += 5;
+					const timeout = setTimeout(() => {
+						if (thePlayer.userData.dead) return clearTimeout(timeout);
+						thePlayer.userData.speed -= 5;
+					}, 15000);
+				}
 			}
 		});
 	}
@@ -610,13 +670,13 @@ export function launchGame(container, callbacks, userData, gameMode) {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	
 		const padding = 4;
-		const gap = 2;
+		const gap = 3;
 		const totalGaps = maxHealth - 1;
 		const barWidth = (canvas.width - (padding * 2) - (gap * totalGaps)) / maxHealth;
 		const barHeight = canvas.height - (padding * 2);
 		const borderRadius = 8;
 
-		ctx.lineWidth = 4;
+		ctx.lineWidth = 2;
 		ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
 
 		for (let i = 0; i < maxHealth; ++i) {
@@ -642,7 +702,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 	function createHealthBar( maxHealth ) {
 		const canvas = document.createElement('canvas');
 		canvas.width = 128;
-		canvas.height = canvas.width / 5;
+		canvas.height = canvas.width / 4;
 		const ctx = canvas.getContext('2d');
 
 		const texture = new THREE.CanvasTexture(canvas);
@@ -666,7 +726,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 
 		player.userData.isReloading = true;
 
-		const reloadTime = 3000;
+		const reloadTime = 10000;
 		const updateInterval = 50;
 		let elapsed = 0;
 
@@ -704,7 +764,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		const padding = 4;
-		const gap = 2;
+		const gap = 1;
 		const totalGaps = maxAmmo - 1;
 		const barWidth = (canvas.width - (padding * 2) - (gap * totalGaps)) / maxAmmo;
 		const barHeight = canvas.height - (padding * 2);
@@ -746,7 +806,7 @@ export function launchGame(container, callbacks, userData, gameMode) {
 	function createAmmoBar( maxAmmo ) {
 		const canvas = document.createElement('canvas');
 		canvas.width = 128;
-		canvas.height = canvas.width / 5;
+		canvas.height = canvas.width / 4;
 		const ctx = canvas.getContext('2d');
 
 		const texture = new THREE.CanvasTexture(canvas);
@@ -805,22 +865,22 @@ export function launchGame(container, callbacks, userData, gameMode) {
 			tank.position.set(realX, -0.4, realZ);
 			tank.scale.set(1.2, 1.2, 1.2);
 
-			const healthBar = createHealthBar(3);
+			const healthBar = createHealthBar(6);
 			healthBar.position.y = 2;
 			tank.add(healthBar);
 
-			const ammoBar = createAmmoBar(5);
+			const ammoBar = createAmmoBar(15);
 			ammoBar.position.y = 1.6;
 			tank.add(ammoBar);
 
 			if (spawnSlot === myPlayerNumber) {
 				player = tank;
 				player.userData.dead = false;
-				player.userData.speed = 6;
-				player.userData.health = 3;
-				player.userData.maxHealth = 3;
-				player.userData.ammo = 5;
-				player.userData.maxAmmo = 5;
+				player.userData.speed = 7;
+				player.userData.health = 6;
+				player.userData.maxHealth = 6;
+				player.userData.ammo = 15;
+				player.userData.maxAmmo = 15;
 				player.userData.isReloading = false;
 				scene.add(player);
 			}
@@ -828,10 +888,10 @@ export function launchGame(container, callbacks, userData, gameMode) {
 				remotePlayers[spawnSlot] = tank;
 				remotePlayers[spawnSlot].userData.dead = false;
 				remotePlayers[spawnSlot].userData.bullets = [];
-				remotePlayers[spawnSlot].userData.health = 3;
-				remotePlayers[spawnSlot].userData.maxHealth = 3;
-				remotePlayers[spawnSlot].userData.ammo = 5;
-				remotePlayers[spawnSlot].userData.maxAmmo = 5;
+				remotePlayers[spawnSlot].userData.health = 6;
+				remotePlayers[spawnSlot].userData.maxHealth = 6;
+				remotePlayers[spawnSlot].userData.ammo = 15;
+				remotePlayers[spawnSlot].userData.maxAmmo = 15;
 				remotePlayers[spawnSlot].userData.isReloading = false;
 				scene.add(tank);
 			}

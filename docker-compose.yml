@@ -46,6 +46,7 @@ services:
     volumes:
       - ./app_next:/app
       - /app/node_modules
+      - ssl_certs:/vault/certs
       - vault_secrets:/vault/config:ro
       - ssl_certs:/app/certificates:ro
     depends_on:

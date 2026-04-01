@@ -53,18 +53,25 @@ export async function emitFriendNotification(
   event: string,
   data: Record<string, any>
 ) {
+  // Use direct socket emit instead of HTTP to avoid SSL cert issues
   try {
-    const https = await import('https')
-    const agent = new https.Agent({ rejectUnauthorized: false })
-    await fetch('https://localhost:3000/api/emit-friend-notification', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetUserId, event, data }),
-      // @ts-ignore - Node.js fetch supports agent
-      agent,
-    });
-  } catch {
-    // Socket may not be connected - safe to ignore
+    const io = (global as any).__socketIO
+    if (!io) {
+      return;
+    }
+    
+    const onlinePlayers = (global as any).__onlinePlayers
+    if (!onlinePlayers) {
+      return;
+    }
+    
+    const targetPlayer = onlinePlayers.get(String(targetUserId));
+    
+    if (targetPlayer) {
+      io.to(targetPlayer.socketId).emit(event, data);
+    }
+  } catch (error) {
+    console.error('[emitFriendNotification] Error:', error);
   }
 }
 

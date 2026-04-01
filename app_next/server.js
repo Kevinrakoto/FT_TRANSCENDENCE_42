@@ -20,6 +20,42 @@ const httpsOptions = {
 
 const onlinePlayers = new Map();
 
+const rateLimits = new Map();
+const RATE_LIMIT_WINDOW = 1000;
+const MAX_MESSAGES_PER_WINDOW = 20;
+
+function checkRateLimit(socketId, event) {
+  const key = `${socketId}:${event}`;
+  const now = Date.now();
+  
+  const entry = rateLimits.get(key);
+  if (!entry || now > entry.resetTime) {
+    rateLimits.set(key, { count: 0, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  if (entry.count >= MAX_MESSAGES_PER_WINDOW) {
+    console.warn(`[RATE LIMIT] Socket ${socketId} exceeded limit for ${event}`);
+    return false;
+  }
+  
+  entry.count++;
+  return true;
+}
+
+function sanitizeMessage(message) {
+  if (typeof message !== 'string') return '';
+  return message.trim().slice(0, 1000);
+}
+
+function validateMessage(message) {
+  if (!message || typeof message !== 'string') return { valid: false, error: 'Invalid message' };
+  const trimmed = message.trim();
+  if (trimmed.length === 0) return { valid: false, error: 'Empty message' };
+  if (trimmed.length > 1000) return { valid: false, error: 'Message too long' };
+  return { valid: true };
+}
+
 function logOnlinePlayers(context) {
   if (onlinePlayers.size === 0) {
   } else {
@@ -100,7 +136,11 @@ app.prepare().then(() => {
   global.__onlinePlayers = onlinePlayers;
 
   io.on('connection', (socket) => {
-    
+
+    socket.on('ping', (data, callback) => {
+      if (callback) callback();
+    });
+  
     socket.on('join-game', (userData) => {
   if (!userData || !userData.userId) {
     return;
@@ -110,26 +150,14 @@ app.prepare().then(() => {
   
   if (existingPlayer) {
     if (existingPlayer.socketId === socket.id) {
-      // Same socket reconnecting (e.g. page refresh)
       onlinePlayers.set(userData.userId, {
         ...existingPlayer,
         ...userData,
         socketId: socket.id
       });
     } else {
-      // Different socket = new session for same user
-      // Disconnect the OLD socket, accept the NEW one
-      const oldSocket = io.sockets.sockets.get(existingPlayer.socketId);
-      if (oldSocket) {
-        oldSocket.emit('force-logout', { reason: 'Another session opened for this account' });
-        oldSocket.disconnect(true);
-      }
-      // Now register the new socket
-      onlinePlayers.set(userData.userId, {
-        userId: userData.userId,
-        username: userData.username,
-        socketId: socket.id,
-      });
+      socket.emit('force-logout', { reason: 'Another session opened for this account' });
+      socket.disconnect(true);
     }
   } else {
     onlinePlayers.set(userData.userId, {
@@ -185,15 +213,48 @@ app.prepare().then(() => {
       socket.emit('user-joined', { userId: otherUserId })
     }
 });
-    socket.on('private-message', async (data) => {
-      if (!data?.conversationId || !data?.content || !data?.userId) return;
+    socket.on('private-message', async (data, callback) => {
+      if (!data?.conversationId || !data?.content || !data?.userId) {
+        if (callback) callback({ success: false, error: 'Invalid data' });
+        return;
+      }
+      
+      if (!checkRateLimit(socket.id, 'private-message')) {
+        if (callback) callback({ success: false, error: 'Rate limited' });
+        return;
+      }
+      
+      const { valid, error } = validateMessage(data.content);
+      if (!valid) {
+        if (callback) callback({ success: false, error });
+        return;
+      }
+      
+      const sanitizedContent = sanitizeMessage(data.content);
       
       try {
+        const conversationId = parseInt(data.conversationId);
+        const userId = parseInt(data.userId);
+        
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: conversationId },
+          include: {
+            participants: {
+              where: { userId: userId }
+            }
+          }
+        });
+        
+        if (!conversation || conversation.participants.length === 0) {
+          if (callback) callback({ success: false, error: 'Conversation not found or access denied' });
+          return;
+        }
+        
         const message = await prisma.message.create({
           data: {
-            content: data.content,
-            conversationId: parseInt(data.conversationId),
-            userId: parseInt(data.userId),
+            content: sanitizedContent,
+            conversationId: conversationId,
+            userId: userId,
           },
           include: {
             user: {
@@ -203,8 +264,14 @@ app.prepare().then(() => {
         });
         
         io.to(String(data.conversationId)).emit('new-message', message);
+        
+        // Also emit globally for notification system
+        io.emit('new-message-global', message);
+        
+        if (callback) callback({ success: true, message });
       } catch (error) {
         console.error('Error sending message:', error);
+        if (callback) callback({ success: false, error: 'Failed to send message' });
       }
     });
     socket.on('leave-private-room', (data) => {
